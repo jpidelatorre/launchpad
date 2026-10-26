@@ -12,6 +12,7 @@
  * - `e`: Edit currently focused bookmark/folder
  * - `Delete`: Delete currently focused bookmark/folder
  * - `,`: Open Settings drawer
+ * - `?`: Open Keyboard Shortcuts dialog
  */
 
 /**
@@ -50,6 +51,7 @@ export function detectGridColumnCount(gridEl) {
  *   onRequestDeleteSelected?: (items: Array<object>) => void,
  *   onRequestGroupSelected?: (items: Array<object>) => void,
  *   onRequestSettings: () => void,
+ *   onRequestShortcuts?: () => void,
  *   isModalOpen: () => boolean
  * }} options
  */
@@ -65,6 +67,7 @@ export function setupKeyboardNavigation({
   onRequestDeleteSelected,
   onRequestGroupSelected,
   onRequestSettings,
+  onRequestShortcuts,
   isModalOpen,
 }) {
   window.addEventListener('keydown', async (e) => {
@@ -146,6 +149,13 @@ export function setupKeyboardNavigation({
     }
 
     if (isTypingInInput) {
+      return;
+    }
+
+    // `?` opens Keyboard Shortcuts dialog when not typing in an input
+    if (!e.metaKey && !e.ctrlKey && !e.altKey && e.key === '?') {
+      e.preventDefault();
+      onRequestShortcuts?.();
       return;
     }
 

@@ -658,6 +658,7 @@ export async function bootstrapLaunchpad() {
     onRequestDeleteSelected: openDeleteSelectedModal,
     onRequestGroupSelected: openGroupSelectedModal,
     onRequestSettings: openSettingsModal,
+    onRequestShortcuts: () => shortcutsDialog.showModal(),
     isModalOpen: isAnyModalOpen,
   });
 
