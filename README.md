@@ -6,7 +6,7 @@ A fast, customizable **Manifest V3** Chrome Extension that replaces the New Tab 
 
 - **User-Defined Root Bookmark Folder**: Pick any folder from your Chrome bookmarks tree to serve as your Launchpad root (persisted via `chrome.storage.sync`).
 - **Drill-Down Folder Navigation with Breadcrumbs**: Click any subfolder tile to drill into it, and navigate back up using the breadcrumb trail or `Backspace`.
-- **Instant Subtree Search**: Press `/` or `Cmd/Ctrl + K` to filter bookmarks and folders across the entire selected root folder hierarchy.
+- **Instant Global Bookmark Search**: Press `/` or `Cmd/Ctrl + K` to search across all bookmarks and folders in Chrome (with full folder paths and drill-down support).
 - **Full Keyboard Navigation**:
   - `ArrowLeft` / `ArrowRight` / `ArrowUp` / `ArrowDown` to move focus across grid tiles
   - `Enter` (`Cmd/Ctrl + Enter`) to open the focused bookmark or folder

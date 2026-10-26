@@ -175,7 +175,7 @@ export function renderLaunchpadMain({
 
     if (state.searchQuery.trim()) {
       emptyStateTitleEl.textContent = 'No matching bookmarks found';
-      emptyStateDescEl.textContent = `Nothing inside "${state.breadcrumbs[0]?.title || 'Launchpad'}" matched "${state.searchQuery.trim()}". Press Escape to clear your search.`;
+      emptyStateDescEl.textContent = `No bookmarks or folders matched "${state.searchQuery.trim()}". Press Escape to clear your search.`;
     } else {
       emptyStateTitleEl.textContent = `"${state.currentFolderTitle}" is empty`;
       emptyStateDescEl.textContent =

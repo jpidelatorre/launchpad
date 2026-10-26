@@ -9,10 +9,10 @@ import {
   saveSettings,
 } from '../services/storage.js';
 import {
-  getBreadcrumbPath,
   getFolderContents,
   getFolderList,
-  searchInSubtree,
+  getGlobalFolderTrail,
+  searchAllBookmarks,
 } from '../services/bookmarks.js';
 
 export function createLaunchpadStore() {
@@ -82,13 +82,13 @@ export function createLaunchpadStore() {
       return state;
     }
 
-    // Ensure currentFolderId is inside rootId; otherwise reset to rootId
+    // Ensure currentFolderId exists; if deleted, reset to rootId
     let activeFolderId = state.currentFolderId || rootId;
-    let breadcrumbs = await getBreadcrumbPath(rootId, activeFolderId);
+    let breadcrumbs = await getGlobalFolderTrail(rootId, activeFolderId);
 
     if (!breadcrumbs) {
       activeFolderId = rootId;
-      breadcrumbs = await getBreadcrumbPath(rootId, rootId);
+      breadcrumbs = await getGlobalFolderTrail(rootId, rootId);
     }
 
     const query = state.searchQuery.trim();
@@ -96,7 +96,7 @@ export function createLaunchpadStore() {
     let currentFolderTitle = rootContents.folder.title;
 
     if (query) {
-      items = await searchInSubtree(rootId, query);
+      items = await searchAllBookmarks(query);
       const activeFolder = await getFolderContents(activeFolderId);
       if (activeFolder) {
         currentFolderTitle = activeFolder.folder.title;
@@ -187,7 +187,7 @@ export function createLaunchpadStore() {
   async function navigateToFolder(folderId) {
     if (!state.settings.rootFolderId) return state;
 
-    const path = await getBreadcrumbPath(
+    const path = await getGlobalFolderTrail(
       state.settings.rootFolderId,
       String(folderId)
     );

@@ -306,6 +306,119 @@ export async function getBreadcrumbPath(rootFolderId, currentFolderId) {
 }
 
 /**
+ * Resolves a breadcrumb trail for `targetFolderId` across the entire bookmark tree.
+ * If `targetFolderId` is inside `rootFolderId`, returns the normal trail starting at `rootFolderId`.
+ * If `targetFolderId` is outside `rootFolderId` (e.g., opened via global search), prepends the
+ * Launchpad root folder crumb so the user can return home with one click.
+ * @param {string} rootFolderId
+ * @param {string} targetFolderId
+ * @returns {Promise<Array<{ id: string, title: string }> | null>}
+ */
+export async function getGlobalFolderTrail(rootFolderId, targetFolderId) {
+  const withinRoot = await getBreadcrumbPath(rootFolderId, targetFolderId);
+  if (withinRoot) return withinRoot;
+
+  const tree = await getRawTree();
+  let externalTrail = null;
+
+  function findGlobalPath(node, targetId, trail) {
+    const isVirtualRoot = node.id === '0' && !node.title;
+    const nextTrail = isVirtualRoot
+      ? trail
+      : [...trail, { id: node.id, title: node.title || 'Untitled Folder' }];
+
+    if (!isVirtualRoot && node.id === targetId && isFolderNode(node)) {
+      return nextTrail;
+    }
+
+    if (node.children) {
+      for (const child of node.children) {
+        if (isFolderNode(child)) {
+          const found = findGlobalPath(child, targetId, nextTrail);
+          if (found) return found;
+        }
+      }
+    }
+    return null;
+  }
+
+  for (const root of tree) {
+    externalTrail = findGlobalPath(root, String(targetFolderId), []);
+    if (externalTrail) break;
+  }
+
+  if (!externalTrail) return null;
+
+  const rootSubtree = await getSubTree(rootFolderId);
+  if (
+    rootSubtree &&
+    !externalTrail.some((crumb) => crumb.id === rootSubtree.id)
+  ) {
+    return [
+      { id: rootSubtree.id, title: rootSubtree.title || 'Untitled Folder' },
+      ...externalTrail,
+    ];
+  }
+
+  return externalTrail;
+}
+
+/**
+ * Recursively searches all bookmarks and folders across the entire Chrome bookmark tree.
+ * Matches against title or URL (case-insensitive) and includes the folder path.
+ * @param {string} query
+ * @returns {Promise<Array<object>>}
+ */
+export async function searchAllBookmarks(query) {
+  const trimmed = (query || '').trim().toLowerCase();
+  if (!trimmed) return [];
+
+  const tree = await getRawTree();
+  const matches = [];
+
+  function walk(folderNode, pathParts) {
+    const isVirtualRoot = folderNode.id === '0' && !folderNode.title;
+    const currentPath = isVirtualRoot
+      ? pathParts
+      : [...pathParts, folderNode.title || 'Untitled Folder'];
+
+    const children = folderNode.children || [];
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      const folder = isFolderNode(child);
+      const isSystemRootContainer = folder && (child.parentId === '0' || isVirtualRoot);
+      const title = child.title || (folder ? 'Untitled Folder' : child.url || '');
+      const url = child.url || '';
+      const haystack = `${title} ${url}`.toLowerCase();
+
+      if (!isSystemRootContainer && haystack.includes(trimmed)) {
+        matches.push({
+          id: child.id,
+          parentId: folderNode.id,
+          index: typeof child.index === 'number' ? child.index : i,
+          title: title || 'Untitled',
+          url: folder ? undefined : url,
+          isFolder: folder,
+          childCount: folder ? (child.children || []).length : 0,
+          relativePath:
+            currentPath.length > 0 ? currentPath.join(' / ') : 'Bookmarks',
+        });
+      }
+
+      if (folder && child.children) {
+        walk(child, currentPath);
+      }
+    }
+  }
+
+  for (const root of tree) {
+    walk(root, []);
+  }
+
+  return matches;
+}
+
+/**
  * Recursively searches all subfolders and bookmarks inside `rootFolderId` matching `query`.
  * Matches against title or URL (case-insensitive) and includes relative folder path.
  * @param {string} rootFolderId

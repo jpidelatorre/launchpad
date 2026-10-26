@@ -58,19 +58,39 @@ test('launchpad store — state transitions, drill-down, search & keyboard focus
     assert.equal(movedAgain, false);
   });
 
-  await t.test('filters items across root folder subtree when search query is set', async () => {
+  await t.test('filters items across all bookmarks globally when search query is set and allows drilling into any folder', async () => {
     const store = createLaunchpadStore();
     await store.init();
     await store.selectRootFolder('10');
 
+    // Match inside Launchpad
     await store.setSearchQuery('figma');
-    const state = store.getState();
+    let state = store.getState();
     assert.equal(state.items.length, 1);
     assert.equal(state.items[0].title, 'Figma');
-    assert.equal(state.items[0].relativePath, 'Design');
+    assert.equal(state.items[0].relativePath, 'Bookmarks Bar / Launchpad / Design');
     assert.equal(state.focusedIndex, 0);
 
-    await store.setSearchQuery('');
+    // Match outside Launchpad ('Personal' / 'YouTube')
+    await store.setSearchQuery('youtube');
+    state = store.getState();
+    assert.equal(state.items.length, 1);
+    assert.equal(state.items[0].title, 'YouTube');
+    assert.equal(state.items[0].relativePath, 'Bookmarks Bar / Personal');
+
+    // Drill into 'Personal' ('11') folder from global search
+    await store.navigateToFolder('11');
+    state = store.getState();
+    assert.equal(state.currentFolderId, '11');
+    assert.equal(state.searchQuery, '');
+    assert.equal(state.items.length, 1);
+    assert.equal(state.items[0].title, 'YouTube');
+    assert.equal(state.breadcrumbs[0].id, '10'); // First breadcrumb returns to Launchpad root
+    assert.equal(state.breadcrumbs[state.breadcrumbs.length - 1].id, '11');
+
+    // Return to Launchpad root
+    await store.navigateToFolder('10');
+    assert.equal(store.getState().currentFolderId, '10');
     assert.equal(store.getState().items.length, 4);
   });
 

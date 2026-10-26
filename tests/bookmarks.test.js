@@ -8,10 +8,12 @@ import {
   getFaviconUrl,
   getFolderContents,
   getFolderList,
+  getGlobalFolderTrail,
   moveItem,
   normalizeBookmarkUrl,
   removeItem,
   resetMockBookmarks,
+  searchAllBookmarks,
   searchInSubtree,
   updateItem,
 } from '../src/services/bookmarks.js';
@@ -63,6 +65,29 @@ test('bookmarks service — folder listing & subtree contents', async (t) => {
     // Folder outside rootFolderId ('11' Personal) returns null
     const outsideTrail = await getBreadcrumbPath('10', '11');
     assert.equal(outsideTrail, null);
+  });
+
+  await t.test('searchAllBookmarks finds bookmarks and folders across the entire tree', async () => {
+    // Finds YouTube inside 'Personal' ('11') even though it is outside 'Launchpad' ('10')
+    const ytMatches = await searchAllBookmarks('youtube');
+    assert.equal(ytMatches.length, 1);
+    assert.equal(ytMatches[0].title, 'YouTube');
+    assert.equal(ytMatches[0].relativePath, 'Bookmarks Bar / Personal');
+
+    // Finds 'Personal' folder itself
+    const folderMatches = await searchAllBookmarks('personal');
+    assert.equal(folderMatches.length, 1);
+    assert.equal(folderMatches[0].id, '11');
+    assert.equal(folderMatches[0].isFolder, true);
+    assert.equal(folderMatches[0].relativePath, 'Bookmarks Bar');
+
+    // getGlobalFolderTrail resolves external folders and prepends rootFolderId ('10')
+    const externalTrail = await getGlobalFolderTrail('10', '11');
+    assert.deepEqual(externalTrail, [
+      { id: '10', title: 'Launchpad' },
+      { id: '1', title: 'Bookmarks Bar' },
+      { id: '11', title: 'Personal' },
+    ]);
   });
 
   await t.test('searchInSubtree finds nested items strictly inside rootFolderId', async () => {
