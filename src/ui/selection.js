@@ -76,7 +76,7 @@ export function setupMarqueeSelection({
     if (!(target instanceof Element)) return true;
     return Boolean(
       target.closest(
-        '[data-item-id], .topbar, dialog, button, input, select, textarea, a, label, .onboarding-card'
+        '[data-item-id], .topbar, .selection-bar, dialog, button, input, select, textarea, a, label, .onboarding-card'
       )
     );
   }

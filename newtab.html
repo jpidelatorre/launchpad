@@ -59,8 +59,46 @@
         <div id="selection-marquee" class="selection-marquee" aria-hidden="true" hidden></div>
       </main>
 
-      <!-- Bottom Toolbar -->
-      <header class="topbar">
+      <!-- Bottom Toolbar & Selection Bar -->
+      <div class="bottom-dock">
+        <div id="selection-bar" class="selection-bar" hidden>
+          <span id="selection-count-label" class="selection-count-label">0 selected</span>
+          <button
+            id="selection-open-btn"
+            type="button"
+            class="btn btn-secondary btn-sm"
+            title="Open selected bookmarks in new tabs (Enter)"
+          >
+            Open
+          </button>
+          <button
+            id="selection-group-btn"
+            type="button"
+            class="btn btn-secondary btn-sm"
+            title="Group selected items into a new folder (G)"
+          >
+            New Folder
+          </button>
+          <button
+            id="selection-delete-btn"
+            type="button"
+            class="btn btn-danger btn-sm"
+            title="Delete selected items (Delete)"
+          >
+            Delete
+          </button>
+          <button
+            id="selection-clear-btn"
+            type="button"
+            class="selection-clear-btn"
+            title="Clear selection (Esc)"
+            aria-label="Clear selection"
+          >
+            ✕
+          </button>
+        </div>
+
+        <header class="topbar">
         <div class="topbar-left">
           <div class="brand-mark" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -103,43 +141,6 @@
         </div>
 
         <div class="topbar-right">
-          <div id="selection-bar" class="selection-bar" hidden>
-            <span id="selection-count-label" class="selection-count-label">0 selected</span>
-            <button
-              id="selection-open-btn"
-              type="button"
-              class="btn btn-secondary btn-sm"
-              title="Open selected bookmarks in new tabs (Enter)"
-            >
-              Open
-            </button>
-            <button
-              id="selection-group-btn"
-              type="button"
-              class="btn btn-secondary btn-sm"
-              title="Group selected items into a new folder (G)"
-            >
-              New Folder
-            </button>
-            <button
-              id="selection-delete-btn"
-              type="button"
-              class="btn btn-danger btn-sm"
-              title="Delete selected items (Delete)"
-            >
-              Delete
-            </button>
-            <button
-              id="selection-clear-btn"
-              type="button"
-              class="selection-clear-btn"
-              title="Clear selection (Esc)"
-              aria-label="Clear selection"
-            >
-              ✕
-            </button>
-          </div>
-
           <div id="toolbar-actions" class="toolbar-actions">
             <button
               id="add-bookmark-btn"
@@ -256,7 +257,8 @@
             </svg>
           </button>
         </div>
-      </header>
+        </header>
+      </div>
 
       <!-- Create / Edit Bookmark or Folder Modal -->
       <dialog id="item-dialog" class="modal-dialog" aria-labelledby="item-dialog-title">

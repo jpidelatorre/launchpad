@@ -106,11 +106,14 @@ body {
 }
 
 /* Bottom Toolbar */
-.topbar {
+.bottom-dock {
   position: sticky;
   bottom: 20px;
   margin-top: auto;
   z-index: 40;
+}
+
+.topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -406,15 +409,23 @@ body {
   font-size: 12px;
 }
 
-/* Selection Action Bar in Bottom Toolbar */
+/* Selection Action Bar Above Bottom Toolbar */
 .selection-bar {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 6px 4px 12px;
-  border-radius: var(--radius-sm);
+  padding: 6px 8px 6px 14px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--accent-color) 14%, var(--bg-surface));
+  backdrop-filter: blur(12px);
   border: 1px solid color-mix(in srgb, var(--accent-color) 38%, var(--border-subtle));
+  box-shadow: var(--shadow-card-hover);
+  white-space: nowrap;
 }
 
 .selection-count-label {
