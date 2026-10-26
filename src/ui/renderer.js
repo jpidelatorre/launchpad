@@ -226,6 +226,7 @@ export function renderLaunchpadMain({
       const img = document.createElement('img');
       img.className = 'bookmark-favicon';
       img.alt = '';
+      img.draggable = false;
       img.loading = 'lazy';
       img.src = getFaviconUrl(item.url, item.title, faviconSize);
       img.addEventListener('error', () => {

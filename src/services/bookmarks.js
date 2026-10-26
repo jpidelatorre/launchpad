@@ -20,12 +20,16 @@ function createDefaultMockTree() {
               parentId: '1',
               index: 0,
               title: 'Launchpad',
+              dateAdded: 1700000000000,
+              dateGroupModified: 1700005000000,
               children: [
                 {
                   id: '100',
                   parentId: '10',
                   index: 0,
                   title: 'Engineering',
+                  dateAdded: 1700001000000,
+                  dateGroupModified: 1700004000000,
                   children: [
                     {
                       id: '1001',
@@ -33,6 +37,8 @@ function createDefaultMockTree() {
                       index: 0,
                       title: 'GitHub',
                       url: 'https://github.com',
+                      dateAdded: 1700001100000,
+                      dateLastUsed: 1700009000000,
                     },
                     {
                       id: '1002',
@@ -40,6 +46,8 @@ function createDefaultMockTree() {
                       index: 1,
                       title: 'MDN Web Docs',
                       url: 'https://developer.mozilla.org',
+                      dateAdded: 1700001200000,
+                      dateLastUsed: 1700008000000,
                     },
                   ],
                 },
@@ -48,6 +56,8 @@ function createDefaultMockTree() {
                   parentId: '10',
                   index: 1,
                   title: 'Design',
+                  dateAdded: 1700003000000,
+                  dateGroupModified: 1700007500000,
                   children: [
                     {
                       id: '1011',
@@ -55,6 +65,8 @@ function createDefaultMockTree() {
                       index: 0,
                       title: 'Figma',
                       url: 'https://www.figma.com',
+                      dateAdded: 1700003100000,
+                      dateLastUsed: 1700007000000,
                     },
                   ],
                 },
@@ -64,6 +76,8 @@ function createDefaultMockTree() {
                   index: 2,
                   title: 'Chrome Extensions Docs',
                   url: 'https://developer.chrome.com/docs/extensions',
+                  dateAdded: 1700004000000,
+                  dateLastUsed: 1700006000000,
                 },
                 {
                   id: '103',
@@ -71,6 +85,8 @@ function createDefaultMockTree() {
                   index: 3,
                   title: 'Hacker News',
                   url: 'https://news.ycombinator.com',
+                  dateAdded: 1700002000000,
+                  dateLastUsed: 1700009500000,
                 },
               ],
             },
@@ -106,6 +122,7 @@ function createDefaultMockTree() {
 let mockTree = createDefaultMockTree();
 let nextMockId = 5000;
 const mockChangeListeners = new Set();
+const localLastUsedMap = new Map();
 
 function notifyMockChange() {
   for (const cb of mockChangeListeners) {
@@ -116,6 +133,21 @@ function notifyMockChange() {
 export function resetMockBookmarks(customTree = null) {
   mockTree = customTree ? structuredClone(customTree) : createDefaultMockTree();
   nextMockId = 5000;
+  localLastUsedMap.clear();
+}
+
+/**
+ * Records that a bookmark was just opened so "Last Opened" sorting reflects it immediately.
+ * @param {string} id
+ * @param {number} [timestamp=Date.now()]
+ */
+export function recordBookmarkUsed(id, timestamp = Date.now()) {
+  if (!id) return;
+  localLastUsedMap.set(String(id), timestamp);
+  const node = findNodeInTree(mockTree, String(id));
+  if (node && !isFolderNode(node)) {
+    node.dateLastUsed = timestamp;
+  }
 }
 
 function hasChromeBookmarks() {
@@ -251,6 +283,20 @@ export async function getFolderContents(folderId) {
   const items = rawChildren.map((child, idx) => {
     const folder = isFolderNode(child);
     const subChildren = child.children || [];
+    const dateAdded = typeof child.dateAdded === 'number' ? child.dateAdded : 0;
+    const recordedUsed = localLastUsedMap.get(String(child.id)) || 0;
+    const dateLastUsed = folder
+      ? undefined
+      : Math.max(
+          typeof child.dateLastUsed === 'number' ? child.dateLastUsed : 0,
+          recordedUsed
+        );
+    const dateGroupModified = folder
+      ? typeof child.dateGroupModified === 'number'
+        ? child.dateGroupModified
+        : dateAdded
+      : undefined;
+
     return {
       id: child.id,
       parentId: child.parentId ?? subtree.id,
@@ -259,6 +305,9 @@ export async function getFolderContents(folderId) {
       url: folder ? undefined : child.url,
       isFolder: folder,
       childCount: folder ? subChildren.length : 0,
+      dateAdded,
+      dateLastUsed,
+      dateGroupModified,
     };
   });
 
@@ -520,12 +569,17 @@ export async function createItem({ parentId, title, url, index }) {
     throw new Error(`Parent folder ${parentId} not found.`);
   }
   parent.children = parent.children || [];
+  const now = Date.now();
   const newNode = {
     id: String(nextMockId++),
     parentId: parent.id,
     title: createPayload.title,
-    ...(createPayload.url ? { url: createPayload.url } : { children: [] }),
+    dateAdded: now,
+    ...(createPayload.url
+      ? { url: createPayload.url, dateLastUsed: 0 }
+      : { children: [], dateGroupModified: now }),
   };
+  parent.dateGroupModified = now;
 
   const insertIndex =
     typeof index === 'number'
@@ -675,6 +729,113 @@ export async function moveItem(id, { parentId, index }) {
   reindexChildren(newParent);
   notifyMockChange();
   return structuredClone(node);
+}
+
+/**
+ * Pure helper that sorts an array of folder items according to the requested criteria.
+ *
+ * Supported `sortBy` values:
+ * - `'name'`: Alphabetical (natural numeric-aware, case-insensitive)
+ * - `'dateAdded'`: Timestamp when bookmark or folder was added (`dateAdded`)
+ * - `'lastActivity'`: `dateLastUsed` for bookmarks, `dateGroupModified` (fallback `dateAdded`) for folders
+ * - `'foldersOnly'`: Preserves relative index order while grouping folders first (when `foldersFirst` is true)
+ *
+ * @param {Array<object>} items
+ * @param {{
+ *   sortBy?: 'name' | 'dateAdded' | 'lastActivity' | 'foldersOnly',
+ *   sortDirection?: 'asc' | 'desc',
+ *   foldersFirst?: boolean
+ * }} [options]
+ * @returns {Array<object>}
+ */
+export function computeSortedItems(
+  items,
+  {
+    sortBy = 'name',
+    sortDirection = 'asc',
+    foldersFirst = true,
+  } = {}
+) {
+  if (!Array.isArray(items)) return [];
+  const dirMultiplier = sortDirection === 'desc' ? -1 : 1;
+
+  return [...items].sort((a, b) => {
+    if (foldersFirst && Boolean(a.isFolder) !== Boolean(b.isFolder)) {
+      return a.isFolder ? -1 : 1;
+    }
+
+    if (sortBy === 'foldersOnly') {
+      return (a.index ?? 0) - (b.index ?? 0);
+    }
+
+    let cmp = 0;
+    if (sortBy === 'name') {
+      cmp = (a.title || '').localeCompare(b.title || '', undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      });
+    } else if (sortBy === 'dateAdded') {
+      cmp = (a.dateAdded || 0) - (b.dateAdded || 0);
+    } else if (sortBy === 'lastActivity') {
+      const aActivity = a.isFolder
+        ? a.dateGroupModified ?? a.dateAdded ?? 0
+        : a.dateLastUsed ?? 0;
+      const bActivity = b.isFolder
+        ? b.dateGroupModified ?? b.dateAdded ?? 0
+        : b.dateLastUsed ?? 0;
+      cmp = aActivity - bActivity;
+    }
+
+    if (cmp !== 0) {
+      return cmp * dirMultiplier;
+    }
+
+    // Tie-breaker: natural title comparison, then original index
+    const titleTie = (a.title || '').localeCompare(b.title || '', undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    });
+    if (titleTie !== 0) return titleTie;
+    return (a.index ?? 0) - (b.index ?? 0);
+  });
+}
+
+/**
+ * Permanently reorders the children of `folderId` in Chrome's bookmark tree
+ * according to `{ sortBy, sortDirection, foldersFirst }`.
+ *
+ * @param {string} folderId
+ * @param {{
+ *   sortBy?: 'name' | 'dateAdded' | 'lastActivity' | 'foldersOnly',
+ *   sortDirection?: 'asc' | 'desc',
+ *   foldersFirst?: boolean
+ * }} options
+ * @returns {Promise<Array<object>>} The newly ordered items
+ */
+export async function sortFolderContents(folderId, options = {}) {
+  const contents = await getFolderContents(folderId);
+  if (!contents || contents.items.length <= 1) {
+    return contents ? contents.items : [];
+  }
+
+  const sorted = computeSortedItems(contents.items, options);
+  const currentIds = contents.items.map((item) => item.id);
+
+  for (let targetIdx = 0; targetIdx < sorted.length; targetIdx++) {
+    const desiredId = sorted[targetIdx].id;
+    const currentIdx = currentIds.indexOf(desiredId);
+    if (currentIdx !== targetIdx) {
+      await moveItem(desiredId, {
+        parentId: String(folderId),
+        index: targetIdx,
+      });
+      currentIds.splice(currentIdx, 1);
+      currentIds.splice(targetIdx, 0, desiredId);
+    }
+  }
+
+  const updated = await getFolderContents(folderId);
+  return updated ? updated.items : [];
 }
 
 /**

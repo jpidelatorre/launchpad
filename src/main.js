@@ -5,7 +5,9 @@
 import {
   createItem,
   onBookmarksChanged,
+  recordBookmarkUsed,
   removeItem,
+  sortFolderContents,
   updateItem,
 } from './services/bookmarks.js';
 import { onSettingsChanged } from './services/storage.js';
@@ -38,6 +40,14 @@ export async function bootstrapLaunchpad() {
   const toolbarActionsEl = document.getElementById('toolbar-actions');
   const addBookmarkBtn = document.getElementById('add-bookmark-btn');
   const addFolderBtn = document.getElementById('add-folder-btn');
+  const sortDropdownEl = document.getElementById('sort-dropdown');
+  const sortMenuBtn = document.getElementById('sort-menu-btn');
+  const sortMenuPopover = document.getElementById('sort-menu-popover');
+  const sortFoldersFirstCheckbox = document.getElementById(
+    'sort-folders-first-checkbox'
+  );
+  const sortDirButtons = document.querySelectorAll('[data-sort-dir]');
+  const sortByButtons = document.querySelectorAll('[data-sort-by]');
   const settingsBtn = document.getElementById('settings-btn');
   const shortcutsBtn = document.getElementById('shortcuts-btn');
 
@@ -119,6 +129,7 @@ export async function bootstrapLaunchpad() {
     }
 
     if (!item.url) return;
+    recordBookmarkUsed(item.id);
     const state = store.getState();
     const shouldOpenNewTab = forceNewTab || state.settings.openInNewTab;
     if (shouldOpenNewTab) {
@@ -264,6 +275,16 @@ export async function bootstrapLaunchpad() {
     if (settingsDialog.open) {
       syncSettingsModalControls(state);
     }
+
+    if (sortFoldersFirstCheckbox) {
+      sortFoldersFirstCheckbox.checked = Boolean(state.settings.foldersFirst);
+    }
+    sortDirButtons.forEach((btn) => {
+      btn.classList.toggle(
+        'is-selected',
+        btn.dataset.sortDir === (state.settings.sortDirection || 'asc')
+      );
+    });
   });
 
   // Search Input Events
@@ -294,6 +315,83 @@ export async function bootstrapLaunchpad() {
   emptyAddBookmarkBtn.addEventListener('click', () => openCreateModal(false));
   settingsBtn.addEventListener('click', openSettingsModal);
   shortcutsBtn.addEventListener('click', () => shortcutsDialog.showModal());
+
+  // Sort Menu Popover Logic
+  function closeSortMenu() {
+    if (!sortMenuPopover) return;
+    sortMenuPopover.hidden = true;
+    sortMenuBtn?.setAttribute('aria-expanded', 'false');
+  }
+
+  sortMenuBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isHidden = sortMenuPopover.hidden;
+    sortMenuPopover.hidden = !isHidden;
+    sortMenuBtn.setAttribute('aria-expanded', String(isHidden));
+  });
+
+  document.addEventListener('click', (e) => {
+    if (
+      sortMenuPopover &&
+      !sortMenuPopover.hidden &&
+      !sortDropdownEl?.contains(e.target)
+    ) {
+      closeSortMenu();
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sortMenuPopover && !sortMenuPopover.hidden) {
+      closeSortMenu();
+    }
+  });
+
+  sortFoldersFirstCheckbox?.addEventListener('change', async (e) => {
+    const foldersFirst = Boolean(e.target.checked);
+    await store.updateSettings({ foldersFirst });
+    const state = store.getState();
+    if (foldersFirst && state.currentFolderId && !state.searchQuery.trim()) {
+      await sortFolderContents(state.currentFolderId, {
+        sortBy: 'foldersOnly',
+        foldersFirst: true,
+      });
+      await store.refresh();
+      showToast('Folders moved to top.');
+    }
+  });
+
+  sortDirButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      store.updateSettings({ sortDirection: btn.dataset.sortDir });
+    });
+  });
+
+  const SORT_LABELS = {
+    name: 'Name',
+    dateAdded: 'Date Added',
+    lastActivity: 'Last Opened / Modified',
+  };
+
+  sortByButtons.forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const sortBy = btn.dataset.sortBy;
+      const state = store.getState();
+      if (!state.currentFolderId) return;
+
+      closeSortMenu();
+      try {
+        await sortFolderContents(state.currentFolderId, {
+          sortBy,
+          sortDirection: state.settings.sortDirection || 'asc',
+          foldersFirst: Boolean(state.settings.foldersFirst),
+        });
+        await store.refresh();
+        showToast(`Sorted by ${SORT_LABELS[sortBy] || sortBy}.`);
+      } catch (err) {
+        showToast(err.message || 'Unable to sort folder.', true);
+      }
+    });
+  });
 
   // Create / Edit Form Submit
   itemForm.addEventListener('submit', async (e) => {

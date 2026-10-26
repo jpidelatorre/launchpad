@@ -77,6 +77,69 @@
               </svg>
               <span>Folder</span>
             </button>
+
+            <div id="sort-dropdown" class="sort-dropdown">
+              <button
+                id="sort-menu-btn"
+                type="button"
+                class="btn btn-secondary"
+                title="Sort current folder"
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m3 16 4 4 4-4" />
+                  <path d="M7 20V4" />
+                  <path d="M11 4h10" />
+                  <path d="M11 8h7" />
+                  <path d="M11 12h4" />
+                </svg>
+                <span>Sort</span>
+              </button>
+
+              <div
+                id="sort-menu-popover"
+                class="sort-popover"
+                role="menu"
+                aria-label="Sort bookmarks and folders"
+                hidden
+              >
+                <div class="sort-popover-section">
+                  <label class="checkbox-label sort-folders-first-label">
+                    <input id="sort-folders-first-checkbox" type="checkbox" checked />
+                    <span>Folders first</span>
+                  </label>
+                </div>
+
+                <div class="sort-popover-section">
+                  <span class="sort-section-label">Direction</span>
+                  <div class="segmented-control segmented-2" role="group" aria-label="Sort direction">
+                    <button type="button" class="segment-btn is-selected" data-sort-dir="asc">
+                      Asc ↑
+                    </button>
+                    <button type="button" class="segment-btn" data-sort-dir="desc">
+                      Desc ↓
+                    </button>
+                  </div>
+                </div>
+
+                <div class="sort-popover-section">
+                  <span class="sort-section-label">Reorder folder by</span>
+                  <button type="button" class="sort-option-btn" data-sort-by="name" role="menuitem">
+                    <span>Name</span>
+                    <span class="sort-option-sub">A–Z</span>
+                  </button>
+                  <button type="button" class="sort-option-btn" data-sort-by="dateAdded" role="menuitem">
+                    <span>Date Added</span>
+                    <span class="sort-option-sub">Created</span>
+                  </button>
+                  <button type="button" class="sort-option-btn" data-sort-by="lastActivity" role="menuitem">
+                    <span>Last Opened / Modified</span>
+                    <span class="sort-option-sub">Activity</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <button

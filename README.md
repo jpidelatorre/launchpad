@@ -13,9 +13,10 @@ A fast, customizable **Manifest V3** Chrome Extension that replaces the New Tab 
   - `Backspace` to go up one folder level
   - `N` to add a new bookmark, `Shift + N` to create a subfolder
   - `E` to edit the focused item, `Delete` to remove it, `,` to open Settings
-- **Bookmark & Folder Management (CRUD + Drag & Drop)**:
+- **Bookmark & Folder Management (CRUD + Drag & Drop + Sorting)**:
   - Add, rename, edit URL, or delete bookmarks and subfolders directly from the launchpad
   - Drag and drop tiles to reorder items or drop items directly onto a subfolder tile or breadcrumb item to move them
+  - **Sort Menu in Top Toolbar**: Permanently reorder the current folder in Chrome by **Name**, **Date Added**, or **Last Opened / Modified** (`dateLastUsed` for bookmarks / `dateGroupModified` for folders), with **Ascending / Descending** direction and a **Folders first** toggle
 - **Theme & Layout Customization**:
   - **Themes**: `System`, `Dark`, or `Light`
   - **Views / Densities**: `Comfortable` cards, `Compact` pills, single-column `List`, or app-launcher `Icon` view

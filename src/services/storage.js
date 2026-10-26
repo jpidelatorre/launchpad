@@ -20,6 +20,7 @@ export const VALID_ICON_SIZES = Object.freeze([
   'large',
   'huge',
 ]);
+export const VALID_SORT_DIRECTIONS = Object.freeze(['asc', 'desc']);
 
 export const DEFAULT_SETTINGS = Object.freeze({
   rootFolderId: null,
@@ -27,6 +28,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   accentColor: '#6366f1',  // Indigo default
   density: 'comfortable',  // 'comfortable' | 'compact' | 'list' | 'icon'
   iconSize: 'medium',      // 'tiny' | 'small' | 'medium' | 'large' | 'huge'
+  foldersFirst: true,      // Place folders ahead of bookmarks when sorting
+  sortDirection: 'asc',    // 'asc' | 'desc'
   openInNewTab: false,     // false = current tab, true = new tab
 });
 
@@ -70,6 +73,13 @@ export function normalizeSettings(raw = {}) {
     iconSize: VALID_ICON_SIZES.includes(raw.iconSize)
       ? raw.iconSize
       : DEFAULT_SETTINGS.iconSize,
+    foldersFirst:
+      typeof raw.foldersFirst === 'boolean'
+        ? raw.foldersFirst
+        : DEFAULT_SETTINGS.foldersFirst,
+    sortDirection: VALID_SORT_DIRECTIONS.includes(raw.sortDirection)
+      ? raw.sortDirection
+      : DEFAULT_SETTINGS.sortDirection,
     openInNewTab:
       typeof raw.openInNewTab === 'boolean'
         ? raw.openInNewTab

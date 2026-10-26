@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  computeSortedItems,
   createItem,
   formatDisplayHostname,
   getBreadcrumbPath,
@@ -11,10 +12,12 @@ import {
   getGlobalFolderTrail,
   moveItem,
   normalizeBookmarkUrl,
+  recordBookmarkUsed,
   removeItem,
   resetMockBookmarks,
   searchAllBookmarks,
   searchInSubtree,
+  sortFolderContents,
   updateItem,
 } from '../src/services/bookmarks.js';
 import { calculateReorderIndex } from '../src/ui/dragdrop.js';
@@ -147,5 +150,84 @@ test('bookmarks service — folder listing & subtree contents', async (t) => {
     assert.equal(normalizeBookmarkUrl('news.ycombinator.com'), 'https://news.ycombinator.com');
     assert.equal(formatDisplayHostname('https://www.github.com/features'), 'github.com');
     assert.ok(getFaviconUrl('https://github.com', 'GitHub').startsWith('data:image/svg+xml'));
+  });
+
+  await t.test('sortFolderContents permanently reorders by Name, Date Added, Last Opened/Modified, and Folders First', async () => {
+    // 1. Sort by Name (asc) with foldersFirst: true
+    // Folders: Design ('101'), Engineering ('100')
+    // Bookmarks: Chrome Extensions Docs ('102'), Hacker News ('103')
+    let reordered = await sortFolderContents('10', {
+      sortBy: 'name',
+      sortDirection: 'asc',
+      foldersFirst: true,
+    });
+    assert.deepEqual(
+      reordered.map((i) => i.title),
+      ['Design', 'Engineering', 'Chrome Extensions Docs', 'Hacker News']
+    );
+
+    // 2. Sort by Name (asc) with foldersFirst: false
+    reordered = await sortFolderContents('10', {
+      sortBy: 'name',
+      sortDirection: 'asc',
+      foldersFirst: false,
+    });
+    assert.deepEqual(
+      reordered.map((i) => i.title),
+      ['Chrome Extensions Docs', 'Design', 'Engineering', 'Hacker News']
+    );
+
+    // 3. Sort by Date Added (desc = newest first) with foldersFirst: false
+    // dateAdded: Chrome Extensions Docs (4000), Design (3000), Hacker News (2000), Engineering (1000)
+    reordered = await sortFolderContents('10', {
+      sortBy: 'dateAdded',
+      sortDirection: 'desc',
+      foldersFirst: false,
+    });
+    assert.deepEqual(
+      reordered.map((i) => i.title),
+      ['Chrome Extensions Docs', 'Design', 'Hacker News', 'Engineering']
+    );
+
+    // 4. Sort by Last Opened / Modified (desc = most recent first) with foldersFirst: true
+    // Folders dateGroupModified: Design (7500), Engineering (4000) -> Design, Engineering
+    // Bookmarks dateLastUsed: Hacker News (9500), Chrome Extensions Docs (6000) -> Hacker News, Chrome Extensions Docs
+    reordered = await sortFolderContents('10', {
+      sortBy: 'lastActivity',
+      sortDirection: 'desc',
+      foldersFirst: true,
+    });
+    assert.deepEqual(
+      reordered.map((i) => i.title),
+      ['Design', 'Engineering', 'Hacker News', 'Chrome Extensions Docs']
+    );
+
+    // 5. Opening Chrome Extensions Docs ('102') updates its dateLastUsed so it becomes most recently opened
+    recordBookmarkUsed('102', 1700099999999);
+    reordered = await sortFolderContents('10', {
+      sortBy: 'lastActivity',
+      sortDirection: 'desc',
+      foldersFirst: true,
+    });
+    assert.deepEqual(
+      reordered.map((i) => i.title),
+      ['Design', 'Engineering', 'Chrome Extensions Docs', 'Hacker News']
+    );
+
+    // Verify computeSortedItems with foldersOnly preserves relative order within folders and bookmarks
+    const mixed = [
+      { id: 'b1', title: 'Zeta', isFolder: false, index: 0 },
+      { id: 'f1', title: 'Beta', isFolder: true, index: 1 },
+      { id: 'b2', title: 'Alpha', isFolder: false, index: 2 },
+      { id: 'f2', title: 'Gamma', isFolder: true, index: 3 },
+    ];
+    const grouped = computeSortedItems(mixed, {
+      sortBy: 'foldersOnly',
+      foldersFirst: true,
+    });
+    assert.deepEqual(
+      grouped.map((i) => i.id),
+      ['f1', 'f2', 'b1', 'b2']
+    );
   });
 });
