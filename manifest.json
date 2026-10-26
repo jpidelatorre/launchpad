@@ -2,7 +2,10 @@
   "manifest_version": 3,
   "name": "Launchpad — Bookmark New Tab",
   "version": "1.0.0",
-  "description": "A fast, keyboard-friendly New Tab launchpad displaying bookmarks from a user-defined bookmark folder.",
+  "description": "A fast, customizable New Tab bookmark launchpad with folder drill-down, global search, multi-select, and drag-and-drop.",
+  "homepage_url": "https://github.com/jpidelatorre/launchpad",
+  "minimum_chrome_version": "104",
+  "offline_enabled": true,
   "permissions": [
     "bookmarks",
     "storage",
@@ -15,13 +18,5 @@
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
-  },
-  "action": {
-    "default_title": "Launchpad",
-    "default_icon": {
-      "16": "icons/icon-16.png",
-      "48": "icons/icon-48.png",
-      "128": "icons/icon-128.png"
-    }
   }
 }
