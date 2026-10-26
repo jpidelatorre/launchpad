@@ -8,7 +8,55 @@
   </head>
   <body>
     <div id="launchpad-app" class="app-shell">
-      <!-- Top Header Bar -->
+      <!-- Main Workspace -->
+      <main class="main-content">
+        <!-- First-Run / Missing Root Folder Onboarding Card -->
+        <section id="onboarding-card" class="onboarding-card" hidden>
+          <div class="onboarding-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              <path d="M12 11v6M9 14h6" />
+            </svg>
+          </div>
+          <h1 class="onboarding-title">Welcome to Launchpad</h1>
+          <p class="onboarding-subtitle">
+            Choose which bookmark folder should power your New Tab launchpad. You can drill down into any subfolders, search, and reorder bookmarks at any time.
+          </p>
+          <div class="onboarding-controls">
+            <label for="onboarding-folder-select" class="sr-only">Bookmark Folder</label>
+            <select id="onboarding-folder-select" class="select-input"></select>
+            <button id="onboarding-save-btn" type="button" class="btn btn-primary btn-lg">
+              Set as Launchpad Folder
+            </button>
+          </div>
+        </section>
+
+        <!-- Bookmark & Subfolder Grid -->
+        <section
+          id="launchpad-grid"
+          class="launchpad-grid"
+          aria-label="Bookmarks and folders"
+          hidden
+        ></section>
+
+        <!-- Empty Folder / No Search Results State -->
+        <section id="empty-state" class="empty-state" hidden>
+          <div class="empty-state-icon" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+            </svg>
+          </div>
+          <h2 id="empty-state-title" class="empty-state-title">This folder is empty</h2>
+          <p id="empty-state-desc" class="empty-state-desc">
+            Add your first bookmark or subfolder to get started.
+          </p>
+          <button id="empty-add-bookmark-btn" type="button" class="btn btn-primary">
+            + Add Bookmark
+          </button>
+        </section>
+      </main>
+
+      <!-- Bottom Toolbar -->
       <header class="topbar">
         <div class="topbar-left">
           <div class="brand-mark" aria-hidden="true">
@@ -169,54 +217,6 @@
           </button>
         </div>
       </header>
-
-      <!-- Main Workspace -->
-      <main class="main-content">
-        <!-- First-Run / Missing Root Folder Onboarding Card -->
-        <section id="onboarding-card" class="onboarding-card" hidden>
-          <div class="onboarding-icon">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-              <path d="M12 11v6M9 14h6" />
-            </svg>
-          </div>
-          <h1 class="onboarding-title">Welcome to Launchpad</h1>
-          <p class="onboarding-subtitle">
-            Choose which bookmark folder should power your New Tab launchpad. You can drill down into any subfolders, search, and reorder bookmarks at any time.
-          </p>
-          <div class="onboarding-controls">
-            <label for="onboarding-folder-select" class="sr-only">Bookmark Folder</label>
-            <select id="onboarding-folder-select" class="select-input"></select>
-            <button id="onboarding-save-btn" type="button" class="btn btn-primary btn-lg">
-              Set as Launchpad Folder
-            </button>
-          </div>
-        </section>
-
-        <!-- Bookmark & Subfolder Grid -->
-        <section
-          id="launchpad-grid"
-          class="launchpad-grid"
-          aria-label="Bookmarks and folders"
-          hidden
-        ></section>
-
-        <!-- Empty Folder / No Search Results State -->
-        <section id="empty-state" class="empty-state" hidden>
-          <div class="empty-state-icon" aria-hidden="true">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-            </svg>
-          </div>
-          <h2 id="empty-state-title" class="empty-state-title">This folder is empty</h2>
-          <p id="empty-state-desc" class="empty-state-desc">
-            Add your first bookmark or subfolder to get started.
-          </p>
-          <button id="empty-add-bookmark-btn" type="button" class="btn btn-primary">
-            + Add Bookmark
-          </button>
-        </section>
-      </main>
 
       <!-- Create / Edit Bookmark or Folder Modal -->
       <dialog id="item-dialog" class="modal-dialog" aria-labelledby="item-dialog-title">
