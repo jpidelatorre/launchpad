@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="system" data-density="comfortable">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>New Tab — Launchpad</title>
+    <link rel="stylesheet" href="src/styles/main.css" />
+  </head>
+  <body>
+    <div id="launchpad-app" class="app-shell">
+      <!-- Top Header Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="brand-mark" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+          </div>
+          <nav id="breadcrumb-nav" class="breadcrumb-nav" aria-label="Bookmark folder breadcrumbs"></nav>
+        </div>
+
+        <div class="topbar-center">
+          <div class="search-box">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              id="search-input"
+              type="search"
+              class="search-input"
+              placeholder="Search bookmarks in launchpad..."
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Search bookmarks"
+            />
+            <button
+              id="clear-search-btn"
+              type="button"
+              class="clear-search-btn"
+              title="Clear search (Esc)"
+              aria-label="Clear search"
+              hidden
+            >
+              ✕
+            </button>
+            <kbd class="search-shortcut-hint" aria-hidden="true">/</kbd>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div id="toolbar-actions" class="toolbar-actions">
+            <button
+              id="add-bookmark-btn"
+              type="button"
+              class="btn btn-primary"
+              title="Add Bookmark (Shortcut: N)"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              <span>Bookmark</span>
+            </button>
+            <button
+              id="add-folder-btn"
+              type="button"
+              class="btn btn-secondary"
+              title="New Subfolder (Shortcut: Shift+N)"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                <line x1="12" y1="11" x2="12" y2="17" />
+                <line x1="9" y1="14" x2="15" y2="14" />
+              </svg>
+              <span>Folder</span>
+            </button>
+          </div>
+
+          <button
+            id="shortcuts-btn"
+            type="button"
+            class="icon-btn"
+            title="Keyboard shortcuts"
+            aria-label="Keyboard shortcuts"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10" />
+            </svg>
+          </button>
+
+          <button
+            id="settings-btn"
+            type="button"
+            class="icon-btn"
+            title="Launchpad Settings (Shortcut: ,)"
+            aria-label="Launchpad Settings"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Workspace -->
+      <main class="main-content">
+        <!-- First-Run / Missing Root Folder Onboarding Card -->
+        <section id="onboarding-card" class="onboarding-card" hidden>
+          <div class="onboarding-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              <path d="M12 11v6M9 14h6" />
+            </svg>
+          </div>
+          <h1 class="onboarding-title">Welcome to Launchpad</h1>
+          <p class="onboarding-subtitle">
+            Choose which bookmark folder should power your New Tab launchpad. You can drill down into any subfolders, search, and reorder bookmarks at any time.
+          </p>
+          <div class="onboarding-controls">
+            <label for="onboarding-folder-select" class="sr-only">Bookmark Folder</label>
+            <select id="onboarding-folder-select" class="select-input"></select>
+            <button id="onboarding-save-btn" type="button" class="btn btn-primary btn-lg">
+              Set as Launchpad Folder
+            </button>
+          </div>
+        </section>
+
+        <!-- Bookmark & Subfolder Grid -->
+        <section
+          id="launchpad-grid"
+          class="launchpad-grid"
+          aria-label="Bookmarks and folders"
+          hidden
+        ></section>
+
+        <!-- Empty Folder / No Search Results State -->
+        <section id="empty-state" class="empty-state" hidden>
+          <div class="empty-state-icon" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+            </svg>
+          </div>
+          <h2 id="empty-state-title" class="empty-state-title">This folder is empty</h2>
+          <p id="empty-state-desc" class="empty-state-desc">
+            Add your first bookmark or subfolder to get started.
+          </p>
+          <button id="empty-add-bookmark-btn" type="button" class="btn btn-primary">
+            + Add Bookmark
+          </button>
+        </section>
+      </main>
+
+      <!-- Create / Edit Bookmark or Folder Modal -->
+      <dialog id="item-dialog" class="modal-dialog" aria-labelledby="item-dialog-title">
+        <form id="item-form" class="modal-content" novalidate>
+          <header class="modal-header">
+            <h2 id="item-dialog-title" class="modal-title">New Bookmark</h2>
+          </header>
+          <div class="modal-body">
+            <div class="form-field">
+              <label for="item-title-input" class="form-label">Title</label>
+              <input
+                id="item-title-input"
+                type="text"
+                class="text-input"
+                placeholder="e.g., GitHub"
+                required
+              />
+            </div>
+            <div id="item-url-group" class="form-field">
+              <label for="item-url-input" class="form-label">URL</label>
+              <input
+                id="item-url-input"
+                type="text"
+                class="text-input"
+                placeholder="https://github.com"
+              />
+            </div>
+            <p id="item-form-error" class="form-error" hidden></p>
+          </div>
+          <footer class="modal-footer">
+            <button id="item-cancel-btn" type="button" class="btn btn-ghost">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </footer>
+        </form>
+      </dialog>
+
+      <!-- Delete Confirmation Modal -->
+      <dialog id="delete-dialog" class="modal-dialog" aria-labelledby="delete-dialog-title">
+        <div class="modal-content">
+          <header class="modal-header">
+            <h2 id="delete-dialog-title" class="modal-title">Confirm Delete</h2>
+          </header>
+          <div class="modal-body">
+            <p id="delete-dialog-message" class="modal-text"></p>
+          </div>
+          <footer class="modal-footer">
+            <button id="delete-cancel-btn" type="button" class="btn btn-ghost">
+              Cancel
+            </button>
+            <button id="delete-confirm-btn" type="button" class="btn btn-danger">
+              Delete
+            </button>
+          </footer>
+        </div>
+      </dialog>
+
+      <!-- Settings Modal -->
+      <dialog id="settings-dialog" class="modal-dialog modal-wide" aria-labelledby="settings-dialog-title">
+        <div class="modal-content">
+          <header class="modal-header">
+            <h2 id="settings-dialog-title" class="modal-title">Launchpad Settings</h2>
+          </header>
+          <div class="modal-body settings-body">
+            <div class="form-field">
+              <label for="settings-root-select" class="form-label">
+                Root Bookmark Folder
+              </label>
+              <p class="form-help">
+                Choose the bookmark folder displayed on your Launchpad home screen.
+              </p>
+              <select id="settings-root-select" class="select-input"></select>
+            </div>
+
+            <div class="form-field">
+              <span class="form-label">Theme Appearance</span>
+              <div class="segmented-control" role="group" aria-label="Theme mode">
+                <button type="button" class="segment-btn" data-theme-option="system">
+                  System
+                </button>
+                <button type="button" class="segment-btn" data-theme-option="dark">
+                  Dark
+                </button>
+                <button type="button" class="segment-btn" data-theme-option="light">
+                  Light
+                </button>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <span class="form-label">Layout Density</span>
+              <div class="segmented-control" role="group" aria-label="Layout density">
+                <button type="button" class="segment-btn" data-density-option="comfortable">
+                  Comfortable
+                </button>
+                <button type="button" class="segment-btn" data-density-option="compact">
+                  Compact
+                </button>
+                <button type="button" class="segment-btn" data-density-option="list">
+                  List
+                </button>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <span class="form-label">Accent Color</span>
+              <div class="accent-picker-row">
+                <div id="accent-presets" class="accent-presets"></div>
+                <label class="custom-color-label" title="Custom hex color">
+                  <input
+                    id="custom-accent-input"
+                    type="color"
+                    class="color-input"
+                    value="#6366f1"
+                    aria-label="Custom accent color"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div class="form-field checkbox-field">
+              <label class="checkbox-label">
+                <input id="open-new-tab-checkbox" type="checkbox" />
+                <span>Always open bookmarks in a new tab</span>
+              </label>
+            </div>
+          </div>
+          <footer class="modal-footer">
+            <button id="settings-close-btn" type="button" class="btn btn-primary">
+              Done
+            </button>
+          </footer>
+        </div>
+      </dialog>
+
+      <!-- Keyboard Shortcuts Modal -->
+      <dialog id="shortcuts-dialog" class="modal-dialog" aria-labelledby="shortcuts-dialog-title">
+        <div class="modal-content">
+          <header class="modal-header">
+            <h2 id="shortcuts-dialog-title" class="modal-title">Keyboard Shortcuts</h2>
+          </header>
+          <div class="modal-body">
+            <ul class="shortcuts-list">
+              <li><span>Focus search bar</span><kbd>/</kbd> or <kbd>⌘/Ctrl + K</kbd></li>
+              <li><span>Navigate grid tiles</span><kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd></li>
+              <li><span>Open focused item</span><kbd>Enter</kbd></li>
+              <li><span>Open in new tab</span><kbd>⌘/Ctrl + Enter</kbd></li>
+              <li><span>Go up one folder</span><kbd>Backspace</kbd></li>
+              <li><span>New bookmark</span><kbd>N</kbd></li>
+              <li><span>New subfolder</span><kbd>Shift + N</kbd></li>
+              <li><span>Edit focused item</span><kbd>E</kbd></li>
+              <li><span>Delete focused item</span><kbd>Delete</kbd></li>
+              <li><span>Open settings</span><kbd>,</kbd></li>
+              <li><span>Clear search / close modal</span><kbd>Esc</kbd></li>
+            </ul>
+          </div>
+          <footer class="modal-footer">
+            <button id="shortcuts-close-btn" type="button" class="btn btn-primary">
+              Close
+            </button>
+          </footer>
+        </div>
+      </dialog>
+
+      <!-- Toast Notification -->
+      <div id="launchpad-toast" class="launchpad-toast" role="status" aria-live="polite" hidden></div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>
