@@ -20,7 +20,10 @@ import {
   sortFolderContents,
   updateItem,
 } from '../src/services/bookmarks.js';
-import { calculateReorderIndex } from '../src/ui/dragdrop.js';
+import {
+  calculateMoveIndexFromVisualIndices,
+  calculateReorderIndex,
+} from '../src/ui/dragdrop.js';
 
 test('bookmarks service — folder listing & subtree contents', async (t) => {
   t.beforeEach(() => {
@@ -138,7 +141,7 @@ test('bookmarks service — folder listing & subtree contents', async (t) => {
     assert.ok(eng.items.some((i) => i.id === '103'));
   });
 
-  await t.test('calculateReorderIndex and URL/favicon helpers', () => {
+  await t.test('calculateReorderIndex, calculateMoveIndexFromVisualIndices, and manual drag-and-drop reordering', async () => {
     const items = [
       { id: 'a', index: 0 },
       { id: 'b', index: 1 },
@@ -146,6 +149,35 @@ test('bookmarks service — folder listing & subtree contents', async (t) => {
     ];
     assert.equal(calculateReorderIndex(items, 'c', 'a', 'before'), 0);
     assert.equal(calculateReorderIndex(items, 'a', 'b', 'after'), 2);
+    assert.equal(calculateMoveIndexFromVisualIndices(items, 0, 2), 3);
+    assert.equal(calculateMoveIndexFromVisualIndices(items, 2, 0), 0);
+    assert.equal(calculateMoveIndexFromVisualIndices(items, 1, 1), null);
+
+    // Verify end-to-end manual reorder forward (0 -> 2) and backward (3 -> 1) on folder '10'
+    // Initial order in '10': ['100' (Engineering), '101' (Design), '102' (Chrome Extensions Docs), '103' (Hacker News)]
+    let folder = await getFolderContents('10');
+    assert.deepEqual(
+      folder.items.map((i) => i.id),
+      ['100', '101', '102', '103']
+    );
+
+    // Drag '100' (visual index 0) to visual index 2 (after '102')
+    const forwardIdx = calculateMoveIndexFromVisualIndices(folder.items, 0, 2);
+    await moveItem('100', { parentId: '10', index: forwardIdx });
+    folder = await getFolderContents('10');
+    assert.deepEqual(
+      folder.items.map((i) => i.id),
+      ['101', '102', '100', '103']
+    );
+
+    // Drag '103' (visual index 3) backward to visual index 1 (before '102')
+    const backwardIdx = calculateMoveIndexFromVisualIndices(folder.items, 3, 1);
+    await moveItem('103', { parentId: '10', index: backwardIdx });
+    folder = await getFolderContents('10');
+    assert.deepEqual(
+      folder.items.map((i) => i.id),
+      ['101', '103', '102', '100']
+    );
 
     assert.equal(normalizeBookmarkUrl('news.ycombinator.com'), 'https://news.ycombinator.com');
     assert.equal(formatDisplayHostname('https://www.github.com/features'), 'github.com');
