@@ -18,7 +18,8 @@ A fast, customizable **Manifest V3** Chrome Extension that replaces the New Tab 
   - Drag and drop tiles to reorder items or drop items directly onto a subfolder tile or breadcrumb item to move them
 - **Theme & Layout Customization**:
   - **Themes**: `System`, `Dark`, or `Light`
-  - **Densities**: `Comfortable` cards, `Compact` pills, or single-column `List`
+  - **Views / Densities**: `Comfortable` cards, `Compact` pills, single-column `List`, or app-launcher `Icon` view
+  - **Icon Sizes**: `Tiny`, `Small`, `Medium`, `Large`, or `Huge` (available in Icon view)
   - **Accent Colors**: 6 curated presets plus a custom hex color picker
 
 ## Loading in Chrome

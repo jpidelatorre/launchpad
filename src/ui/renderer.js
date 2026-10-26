@@ -17,6 +17,7 @@ export function applyThemeAndSettings(settings) {
   const root = document.documentElement;
   root.dataset.theme = settings.theme || 'system';
   root.dataset.density = settings.density || 'comfortable';
+  root.dataset.iconSize = settings.iconSize || 'medium';
   root.style.setProperty('--accent-color', settings.accentColor || '#6366f1');
 }
 
@@ -217,13 +218,18 @@ export function renderLaunchpadMain({
         </svg>
       `;
     } else {
+      const faviconSize =
+        state.settings?.density === 'icon' &&
+        (state.settings?.iconSize === 'large' || state.settings?.iconSize === 'huge')
+          ? 128
+          : 64;
       const img = document.createElement('img');
       img.className = 'bookmark-favicon';
       img.alt = '';
       img.loading = 'lazy';
-      img.src = getFaviconUrl(item.url, item.title);
+      img.src = getFaviconUrl(item.url, item.title, faviconSize);
       img.addEventListener('error', () => {
-        const fallback = createMonogramSvgDataUrl(item.url, item.title);
+        const fallback = createMonogramSvgDataUrl(item.url, item.title, faviconSize);
         if (img.src !== fallback) {
           img.src = fallback;
         }

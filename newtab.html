@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="system" data-density="comfortable">
+<html lang="en" data-theme="system" data-density="comfortable" data-icon-size="medium">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -245,8 +245,8 @@
             </div>
 
             <div class="form-field">
-              <span class="form-label">Layout Density</span>
-              <div class="segmented-control" role="group" aria-label="Layout density">
+              <span class="form-label">Layout / View</span>
+              <div class="segmented-control segmented-4" role="group" aria-label="Layout density">
                 <button type="button" class="segment-btn" data-density-option="comfortable">
                   Comfortable
                 </button>
@@ -255,6 +255,30 @@
                 </button>
                 <button type="button" class="segment-btn" data-density-option="list">
                   List
+                </button>
+                <button type="button" class="segment-btn" data-density-option="icon">
+                  Icon
+                </button>
+              </div>
+            </div>
+
+            <div id="icon-size-field" class="form-field" hidden>
+              <span class="form-label">Icon Size</span>
+              <div class="segmented-control segmented-5" role="group" aria-label="Icon size">
+                <button type="button" class="segment-btn" data-icon-size-option="tiny">
+                  Tiny
+                </button>
+                <button type="button" class="segment-btn" data-icon-size-option="small">
+                  Small
+                </button>
+                <button type="button" class="segment-btn" data-icon-size-option="medium">
+                  Medium
+                </button>
+                <button type="button" class="segment-btn" data-icon-size-option="large">
+                  Large
+                </button>
+                <button type="button" class="segment-btn" data-icon-size-option="huge">
+                  Huge
                 </button>
               </div>
             </div>

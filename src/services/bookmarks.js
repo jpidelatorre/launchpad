@@ -568,9 +568,10 @@ export async function moveItem(id, { parentId, index }) {
  * Generates a favicon URL using Chrome's MV3 `_favicon` API, with an SVG monogram fallback.
  * @param {string} pageUrl
  * @param {string} [title='']
+ * @param {number} [sizePx=64]
  * @returns {string}
  */
-export function getFaviconUrl(pageUrl, title = '') {
+export function getFaviconUrl(pageUrl, title = '', sizePx = 64) {
   if (
     pageUrl &&
     typeof globalThis.chrome !== 'undefined' &&
@@ -580,23 +581,24 @@ export function getFaviconUrl(pageUrl, title = '') {
     try {
       const faviconUrl = new URL(globalThis.chrome.runtime.getURL('/_favicon/'));
       faviconUrl.searchParams.set('pageUrl', pageUrl);
-      faviconUrl.searchParams.set('size', '64');
+      faviconUrl.searchParams.set('size', String(sizePx));
       return faviconUrl.toString();
     } catch {
       // Fall back to SVG monogram
     }
   }
 
-  return createMonogramSvgDataUrl(pageUrl, title);
+  return createMonogramSvgDataUrl(pageUrl, title, sizePx);
 }
 
 /**
  * Creates a clean SVG data URL displaying the domain's or title's initial letter.
  * @param {string} pageUrl
  * @param {string} [title='']
+ * @param {number} [sizePx=64]
  * @returns {string}
  */
-export function createMonogramSvgDataUrl(pageUrl, title = '') {
+export function createMonogramSvgDataUrl(pageUrl, title = '', sizePx = 64) {
   let letter = '?';
   let seed = title || pageUrl || 'launchpad';
 
@@ -629,7 +631,7 @@ export function createMonogramSvgDataUrl(pageUrl, title = '') {
   }
   const color = palette[hash % palette.length];
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="${color}"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="system-ui,-apple-system,sans-serif" font-size="30" font-weight="700">${letter.replace(/[<>&"']/g, '')}</text></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${sizePx}" height="${sizePx}" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="${color}"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="system-ui,-apple-system,sans-serif" font-size="30" font-weight="700">${letter.replace(/[<>&"']/g, '')}</text></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 

@@ -6,11 +6,27 @@
 
 export const STORAGE_KEY = 'launchpad_settings_v1';
 
+export const VALID_THEMES = Object.freeze(['system', 'dark', 'light']);
+export const VALID_DENSITIES = Object.freeze([
+  'comfortable',
+  'compact',
+  'list',
+  'icon',
+]);
+export const VALID_ICON_SIZES = Object.freeze([
+  'tiny',
+  'small',
+  'medium',
+  'large',
+  'huge',
+]);
+
 export const DEFAULT_SETTINGS = Object.freeze({
   rootFolderId: null,
   theme: 'system',         // 'system' | 'dark' | 'light'
   accentColor: '#6366f1',  // Indigo default
-  density: 'comfortable',  // 'comfortable' | 'compact' | 'list'
+  density: 'comfortable',  // 'comfortable' | 'compact' | 'list' | 'icon'
+  iconSize: 'medium',      // 'tiny' | 'small' | 'medium' | 'large' | 'huge'
   openInNewTab: false,     // false = current tab, true = new tab
 });
 
@@ -38,22 +54,22 @@ function hasLocalStorage() {
  * @returns {typeof DEFAULT_SETTINGS}
  */
 export function normalizeSettings(raw = {}) {
-  const validThemes = ['system', 'dark', 'light'];
-  const validDensities = ['comfortable', 'compact', 'list'];
-
   return {
     rootFolderId:
       typeof raw.rootFolderId === 'string' && raw.rootFolderId.trim() !== ''
         ? raw.rootFolderId.trim()
         : null,
-    theme: validThemes.includes(raw.theme) ? raw.theme : DEFAULT_SETTINGS.theme,
+    theme: VALID_THEMES.includes(raw.theme) ? raw.theme : DEFAULT_SETTINGS.theme,
     accentColor:
       typeof raw.accentColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(raw.accentColor)
         ? raw.accentColor.toLowerCase()
         : DEFAULT_SETTINGS.accentColor,
-    density: validDensities.includes(raw.density)
+    density: VALID_DENSITIES.includes(raw.density)
       ? raw.density
       : DEFAULT_SETTINGS.density,
+    iconSize: VALID_ICON_SIZES.includes(raw.iconSize)
+      ? raw.iconSize
+      : DEFAULT_SETTINGS.iconSize,
     openInNewTab:
       typeof raw.openInNewTab === 'boolean'
         ? raw.openInNewTab

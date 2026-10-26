@@ -419,7 +419,55 @@ body {
   gap: 12px;
 }
 
-/* Launchpad Grid Layouts (Comfortable, Compact, List) */
+/* Launchpad Grid Layouts (Comfortable, Compact, List, Icon) */
+:root {
+  --icon-cell-min: 128px;
+  --icon-grid-gap: 18px;
+  --icon-box-size: 68px;
+  --icon-img-size: 36px;
+  --icon-font-size: 13px;
+}
+
+:root[data-icon-size="tiny"] {
+  --icon-cell-min: 84px;
+  --icon-grid-gap: 12px;
+  --icon-box-size: 40px;
+  --icon-img-size: 22px;
+  --icon-font-size: 11.5px;
+}
+
+:root[data-icon-size="small"] {
+  --icon-cell-min: 104px;
+  --icon-grid-gap: 14px;
+  --icon-box-size: 52px;
+  --icon-img-size: 28px;
+  --icon-font-size: 12px;
+}
+
+:root[data-icon-size="medium"] {
+  --icon-cell-min: 128px;
+  --icon-grid-gap: 18px;
+  --icon-box-size: 68px;
+  --icon-img-size: 36px;
+  --icon-font-size: 13px;
+}
+
+:root[data-icon-size="large"] {
+  --icon-cell-min: 156px;
+  --icon-grid-gap: 22px;
+  --icon-box-size: 88px;
+  --icon-img-size: 48px;
+  --icon-font-size: 13.5px;
+}
+
+:root[data-icon-size="huge"] {
+  --icon-cell-min: 192px;
+  --icon-grid-gap: 26px;
+  --icon-box-size: 112px;
+  --icon-img-size: 64px;
+  --icon-font-size: 14.5px;
+}
+
 .launchpad-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -437,6 +485,11 @@ body {
   margin: 0 auto;
   width: 100%;
   gap: 8px;
+}
+
+:root[data-density="icon"] .launchpad-grid {
+  grid-template-columns: repeat(auto-fill, minmax(var(--icon-cell-min), 1fr));
+  gap: var(--icon-grid-gap);
 }
 
 /* Launchpad Card */
@@ -459,6 +512,32 @@ body {
 :root[data-density="compact"] .launchpad-card {
   padding: 10px 12px;
   gap: 10px;
+}
+
+:root[data-density="icon"] .launchpad-card {
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  text-align: center;
+  padding: 14px 10px 12px;
+  gap: 10px;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+:root[data-density="icon"] .launchpad-card:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--border-subtle);
+  box-shadow: var(--shadow-card);
+}
+
+:root[data-density="icon"] .launchpad-card.is-folder {
+  background: transparent;
+}
+
+:root[data-density="icon"] .launchpad-card.is-folder:hover {
+  background: var(--bg-surface-hover);
 }
 
 .launchpad-card:hover {
@@ -501,8 +580,34 @@ body {
   border-radius: 8px;
 }
 
+:root[data-density="icon"] .card-icon-wrap {
+  width: var(--icon-box-size);
+  height: var(--icon-box-size);
+  border-radius: calc(var(--icon-box-size) * 0.25);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+:root[data-density="icon"] .launchpad-card.is-folder .card-icon-wrap {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent-color) 16%, var(--bg-surface)),
+    var(--bg-surface)
+  );
+}
+
+:root[data-density="icon"] .launchpad-card:hover .card-icon-wrap {
+  box-shadow: var(--shadow-card-hover);
+}
+
 .folder-glyph {
   color: var(--accent-color);
+}
+
+:root[data-density="icon"] .folder-glyph {
+  width: var(--icon-img-size);
+  height: var(--icon-img-size);
 }
 
 .bookmark-favicon {
@@ -517,9 +622,20 @@ body {
   height: 20px;
 }
 
+:root[data-density="icon"] .bookmark-favicon {
+  width: var(--icon-img-size);
+  height: var(--icon-img-size);
+  border-radius: calc(var(--icon-img-size) * 0.18);
+}
+
 .card-body {
   min-width: 0;
   flex: 1;
+}
+
+:root[data-density="icon"] .card-body {
+  width: 100%;
+  flex: 0 1 auto;
 }
 
 .card-title {
@@ -535,6 +651,17 @@ body {
   font-size: 13px;
 }
 
+:root[data-density="icon"] .card-title {
+  font-size: var(--icon-font-size);
+  font-weight: 500;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
 .card-meta {
   font-size: 12px;
   color: var(--text-secondary);
@@ -544,7 +671,8 @@ body {
   margin-top: 2px;
 }
 
-:root[data-density="compact"] .card-meta {
+:root[data-density="compact"] .card-meta,
+:root[data-density="icon"] .card-meta {
   display: none;
 }
 
@@ -555,6 +683,18 @@ body {
   gap: 4px;
   opacity: 0;
   transition: opacity var(--transition-fast);
+}
+
+:root[data-density="icon"] .card-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: var(--bg-elevated);
+  backdrop-filter: blur(6px);
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
 }
 
 .launchpad-card:hover .card-actions,
@@ -726,6 +866,14 @@ body {
   padding: 4px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
+}
+
+.segmented-control.segmented-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.segmented-control.segmented-5 {
+  grid-template-columns: repeat(5, 1fr);
 }
 
 .segment-btn {

@@ -72,6 +72,8 @@ export async function bootstrapLaunchpad() {
   const settingsRootSelect = document.getElementById('settings-root-select');
   const themeButtons = document.querySelectorAll('[data-theme-option]');
   const densityButtons = document.querySelectorAll('[data-density-option]');
+  const iconSizeField = document.getElementById('icon-size-field');
+  const iconSizeButtons = document.querySelectorAll('[data-icon-size-option]');
   const accentPresetsContainer = document.getElementById('accent-presets');
   const customAccentInput = document.getElementById('custom-accent-input');
   const openNewTabCheckbox = document.getElementById('open-new-tab-checkbox');
@@ -187,6 +189,17 @@ export async function bootstrapLaunchpad() {
       btn.classList.toggle(
         'is-selected',
         btn.dataset.densityOption === state.settings.density
+      );
+    });
+
+    if (iconSizeField) {
+      iconSizeField.hidden = state.settings.density !== 'icon';
+    }
+
+    iconSizeButtons.forEach((btn) => {
+      btn.classList.toggle(
+        'is-selected',
+        btn.dataset.iconSizeOption === state.settings.iconSize
       );
     });
 
@@ -359,6 +372,12 @@ export async function bootstrapLaunchpad() {
   densityButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       store.updateSettings({ density: btn.dataset.densityOption });
+    });
+  });
+
+  iconSizeButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      store.updateSettings({ iconSize: btn.dataset.iconSizeOption });
     });
   });
 

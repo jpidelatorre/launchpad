@@ -2,7 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { resetMockBookmarks } from '../src/services/bookmarks.js';
-import { resetMemoryStorage } from '../src/services/storage.js';
+import {
+  normalizeSettings,
+  resetMemoryStorage,
+  VALID_ICON_SIZES,
+} from '../src/services/storage.js';
 import { createLaunchpadStore } from '../src/state/store.js';
 
 test('launchpad store — state transitions, drill-down, search & keyboard focus', async (t) => {
@@ -95,7 +99,33 @@ test('launchpad store — state transitions, drill-down, search & keyboard focus
     const { settings } = store.getState();
     assert.equal(settings.theme, 'dark');
     assert.equal(settings.density, 'compact');
+    assert.equal(settings.iconSize, 'medium');
     assert.equal(settings.accentColor, '#10b981');
     assert.equal(settings.openInNewTab, true);
+  });
+
+  await t.test('supports icon view density and all 5 icon sizes (tiny, small, medium, large, huge)', async () => {
+    const store = createLaunchpadStore();
+    await store.init();
+
+    assert.deepEqual(VALID_ICON_SIZES, ['tiny', 'small', 'medium', 'large', 'huge']);
+
+    for (const size of VALID_ICON_SIZES) {
+      await store.updateSettings({
+        density: 'icon',
+        iconSize: size,
+      });
+      const { settings } = store.getState();
+      assert.equal(settings.density, 'icon');
+      assert.equal(settings.iconSize, size);
+    }
+
+    // Invalid icon size or density falls back to defaults
+    const normalized = normalizeSettings({
+      density: 'invalid-density',
+      iconSize: 'gigantic',
+    });
+    assert.equal(normalized.density, 'comfortable');
+    assert.equal(normalized.iconSize, 'medium');
   });
 });
