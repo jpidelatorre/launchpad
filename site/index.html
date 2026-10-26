@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Launchpad — Bookmark New Tab for Chrome</title>
+    <meta
+      name="description"
+      content="Turn your Chrome New Tab page into a clean, customizable bookmark launchpad with folders, instant search, and drag-and-drop organization."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav-bar">
+        <a href="index.html" class="brand">
+          <span class="brand-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+          </span>
+          <span>Launchpad</span>
+        </a>
+
+        <nav class="nav-links" aria-label="Primary navigation">
+          <a href="#features">Features</a>
+          <a href="support.html">Support</a>
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="https://github.com/jpidelatorre/launchpad" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero & Top Screenshot -->
+      <section class="hero">
+        <div class="container">
+          <div class="hero-badge">Chrome New Tab Extension</div>
+          <h1 class="hero-title">Your favorite bookmarks, right on every New Tab.</h1>
+          <p class="hero-subtitle">
+            Replace Chrome’s cluttered New Tab page with a calm, visual launchpad powered by your own bookmarks. Browse folders, search in an instant, and organize with drag and drop.
+          </p>
+
+          <div class="hero-actions">
+            <a href="#features" class="btn btn-primary">Explore Features</a>
+            <a href="support.html" class="btn btn-secondary">Help &amp; Support</a>
+          </div>
+
+          <div class="screenshot-frame">
+            <div class="window-bar" aria-hidden="true">
+              <span class="window-dot red"></span>
+              <span class="window-dot amber"></span>
+              <span class="window-dot green"></span>
+              <span class="window-title">New Tab — Launchpad</span>
+            </div>
+            <img
+              src="screencap.png"
+              alt="Launchpad Chrome Extension showing app icons and the bottom toolbar"
+              class="screenshot-img"
+            />
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section id="features" class="section">
+        <div class="container">
+          <div class="section-header">
+            <h2 class="section-title">Everything you need for a cleaner start page</h2>
+            <p class="section-desc">
+              Designed to feel effortless, personal, and fast—without getting in your way.
+            </p>
+          </div>
+
+          <div class="features-grid">
+            <article class="feature-card">
+              <div class="feature-icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                </svg>
+              </div>
+              <h3 class="feature-title">Pick Your Own Home Folder</h3>
+              <p class="feature-text">
+                Choose any bookmark folder in Chrome to act as your home screen. Click into subfolders whenever you need to and hop back up using the breadcrumb bar.
+              </p>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+              </div>
+              <h3 class="feature-title">Find Any Link Instantly</h3>
+              <p class="feature-text">
+                Press <kbd>/</kbd> and start typing to search across all your bookmarks and folders at once—even if they live outside your main launchpad folder.
+              </p>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2v20M2 12h20" />
+                </svg>
+              </div>
+              <h3 class="feature-title">Drag, Drop &amp; Multi-Select</h3>
+              <p class="feature-text">
+                Rearrange links by dragging them, or drag a selection box around multiple items to open them together, move them into a folder, or group them into a brand-new folder.
+              </p>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </div>
+              <h3 class="feature-title">Customize Your Look</h3>
+              <p class="feature-text">
+                Switch between App Icon grid, Comfortable cards, Compact pills, or a simple List. Choose from 5 icon sizes, Dark or Light themes, and your favorite accent color.
+              </p>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="4" width="20" height="16" rx="2" />
+                  <path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10" />
+                </svg>
+              </div>
+              <h3 class="feature-title">Keyboard-Friendly &amp; One-Click Sorting</h3>
+              <p class="feature-text">
+                Navigate tiles with arrow keys, press <kbd>?</kbd> anytime to view shortcuts, or sort any folder alphabetically, by date added, or by most recently opened.
+              </p>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+              </div>
+              <h3 class="feature-title">100% Private &amp; Offline</h3>
+              <p class="feature-text">
+                No sign-ups, no tracking, and no external servers. Launchpad works directly with Chrome’s built-in bookmarks right on your computer.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <span>&copy; 2026 Launchpad — Bookmark New Tab</span>
+        <div class="footer-links">
+          <a href="index.html">Home</a>
+          <a href="support.html">Support</a>
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="https://github.com/jpidelatorre/launchpad" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
