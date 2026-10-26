@@ -10,6 +10,7 @@ import {
   getFolderContents,
   getFolderList,
   getGlobalFolderTrail,
+  groupItemsIntoNewFolder,
   moveItem,
   moveItems,
   normalizeBookmarkUrl,
@@ -315,6 +316,56 @@ test('bookmarks service — folder listing & subtree contents', async (t) => {
     assert.deepEqual(
       engAfterDelete.items.map((i) => i.id),
       ['1001', '1002']
+    );
+  });
+
+  await t.test('groupItemsIntoNewFolder creates a new folder at the first selected item index and moves selected items into it', async () => {
+    // Initial items in '10': ['100' (Engineering), '101' (Design), '102' (Chrome Extensions Docs), '103' (Hacker News)]
+    // Group '101' (index 1) and '103' (index 3) into a new folder "Reading & Design"
+    const newFolder = await groupItemsIntoNewFolder({
+      parentId: '10',
+      title: 'Reading & Design',
+      itemIds: ['101', '103'],
+    });
+
+    assert.equal(newFolder.title, 'Reading & Design');
+    assert.equal(newFolder.parentId, '10');
+
+    // In parent '10', the new folder should occupy index 1 (where '101' was),
+    // leaving ['100', newFolder.id, '102']
+    const parentContents = await getFolderContents('10');
+    assert.deepEqual(
+      parentContents.items.map((i) => i.id),
+      ['100', newFolder.id, '102']
+    );
+    assert.equal(parentContents.items[1].isFolder, true);
+    assert.equal(parentContents.items[1].childCount, 2);
+
+    // Inside newFolder, items should be ['101', '103'] in order
+    const groupedContents = await getFolderContents(newFolder.id);
+    assert.deepEqual(
+      groupedContents.items.map((i) => i.id),
+      ['101', '103']
+    );
+
+    // Validation checks
+    await assert.rejects(
+      () =>
+        groupItemsIntoNewFolder({
+          parentId: '10',
+          title: '   ',
+          itemIds: ['102'],
+        }),
+      /Folder title is required/
+    );
+    await assert.rejects(
+      () =>
+        groupItemsIntoNewFolder({
+          parentId: '10',
+          title: 'Valid Name',
+          itemIds: [],
+        }),
+      /Select at least one item to group/
     );
   });
 });

@@ -48,6 +48,7 @@ export function detectGridColumnCount(gridEl) {
  *   onRequestEdit: (item: object) => void,
  *   onRequestDelete: (item: object) => void,
  *   onRequestDeleteSelected?: (items: Array<object>) => void,
+ *   onRequestGroupSelected?: (items: Array<object>) => void,
  *   onRequestSettings: () => void,
  *   isModalOpen: () => boolean
  * }} options
@@ -62,6 +63,7 @@ export function setupKeyboardNavigation({
   onRequestEdit,
   onRequestDelete,
   onRequestDeleteSelected,
+  onRequestGroupSelected,
   onRequestSettings,
   isModalOpen,
 }) {
@@ -244,6 +246,24 @@ export function setupKeyboardNavigation({
         } else if (state.focusedIndex >= 0 && state.items[state.focusedIndex]) {
           e.preventDefault();
           onRequestDelete(state.items[state.focusedIndex]);
+        }
+        break;
+      }
+      case 'g':
+      case 'G': {
+        if (
+          !e.metaKey &&
+          !e.ctrlKey &&
+          !e.altKey &&
+          state.selectedIds &&
+          state.selectedIds.length > 0
+        ) {
+          e.preventDefault();
+          const selectedSet = new Set(state.selectedIds.map((id) => String(id)));
+          const selectedItems = state.items.filter((item) =>
+            selectedSet.has(String(item.id))
+          );
+          onRequestGroupSelected?.(selectedItems);
         }
         break;
       }

@@ -819,6 +819,59 @@ export async function moveItems(ids, { parentId, index }) {
 }
 
 /**
+ * Creates a new subfolder in `parentId` and moves all `itemIds` into it.
+ * If `index` is omitted, places the new folder at the position of the first
+ * selected item in `parentId`.
+ *
+ * @param {{
+ *   parentId: string,
+ *   title: string,
+ *   itemIds: Array<string>,
+ *   index?: number
+ * }} params
+ * @returns {Promise<object>} The newly created folder node
+ */
+export async function groupItemsIntoNewFolder({
+  parentId,
+  title,
+  itemIds,
+  index,
+}) {
+  const cleanTitle = (title || '').trim();
+  if (!cleanTitle) {
+    throw new Error('Folder title is required.');
+  }
+  if (!Array.isArray(itemIds) || itemIds.length === 0) {
+    throw new Error('Select at least one item to group.');
+  }
+
+  const uniqueIds = Array.from(new Set(itemIds.map((id) => String(id))));
+  let insertIndex = index;
+
+  if (typeof insertIndex !== 'number') {
+    const contents = await getFolderContents(parentId);
+    if (contents) {
+      const selectedSet = new Set(uniqueIds);
+      const firstIdx = contents.items.findIndex((item) =>
+        selectedSet.has(String(item.id))
+      );
+      if (firstIdx !== -1) {
+        insertIndex = firstIdx;
+      }
+    }
+  }
+
+  const createdFolder = await createItem({
+    parentId: String(parentId),
+    title: cleanTitle,
+    index: insertIndex,
+  });
+
+  await moveItems(uniqueIds, { parentId: createdFolder.id });
+  return createdFolder;
+}
+
+/**
  * Pure helper that sorts an array of folder items according to the requested criteria.
  *
  * Supported `sortBy` values:

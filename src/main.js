@@ -4,6 +4,7 @@
 
 import {
   createItem,
+  groupItemsIntoNewFolder,
   onBookmarksChanged,
   recordBookmarkUsed,
   removeItem,
@@ -69,6 +70,7 @@ export async function bootstrapLaunchpad() {
   const selectionBarEl = document.getElementById('selection-bar');
   const selectionCountLabel = document.getElementById('selection-count-label');
   const selectionOpenBtn = document.getElementById('selection-open-btn');
+  const selectionGroupBtn = document.getElementById('selection-group-btn');
   const selectionDeleteBtn = document.getElementById('selection-delete-btn');
   const selectionClearBtn = document.getElementById('selection-clear-btn');
 
@@ -180,6 +182,23 @@ export async function bootstrapLaunchpad() {
     itemDialog.showModal();
     itemTitleInput.focus();
     itemTitleInput.select();
+  }
+
+  function openGroupSelectedModal(items) {
+    if (!Array.isArray(items) || items.length === 0) return;
+    const state = store.getState();
+    if (!state.rootFolderValid || !state.currentFolderId) return;
+
+    editingContext = { mode: 'group', isFolder: true, items };
+    const itemLabel = items.length === 1 ? '1 Item' : `${items.length} Items`;
+    itemDialogTitle.textContent = `Group ${itemLabel} into Folder`;
+    itemTitleInput.value = '';
+    itemUrlInput.value = '';
+    itemUrlGroup.hidden = true;
+    itemUrlInput.required = false;
+    itemFormError.hidden = true;
+    itemDialog.showModal();
+    itemTitleInput.focus();
   }
 
   function openDeleteModal(item) {
@@ -478,6 +497,17 @@ export async function bootstrapLaunchpad() {
           ...(editingContext.isFolder ? {} : { url }),
         });
         showToast('Changes saved.');
+      } else if (editingContext.mode === 'group' && editingContext.items) {
+        const itemIds = editingContext.items.map((item) => item.id);
+        await groupItemsIntoNewFolder({
+          parentId: state.currentFolderId,
+          title,
+          itemIds,
+        });
+        store.clearSelection();
+        showToast(
+          `Grouped ${itemIds.length} ${itemIds.length === 1 ? 'item' : 'items'} into "${title}".`
+        );
       }
       itemDialog.close();
       editingContext = null;
@@ -540,6 +570,10 @@ export async function bootstrapLaunchpad() {
 
   selectionOpenBtn?.addEventListener('click', () => {
     handleActivateSelected(getSelectedItemsFromState());
+  });
+
+  selectionGroupBtn?.addEventListener('click', () => {
+    openGroupSelectedModal(getSelectedItemsFromState());
   });
 
   selectionDeleteBtn?.addEventListener('click', () => {
@@ -622,6 +656,7 @@ export async function bootstrapLaunchpad() {
     onRequestEdit: openEditModal,
     onRequestDelete: openDeleteModal,
     onRequestDeleteSelected: openDeleteSelectedModal,
+    onRequestGroupSelected: openGroupSelectedModal,
     onRequestSettings: openSettingsModal,
     isModalOpen: isAnyModalOpen,
   });
