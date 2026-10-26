@@ -11,9 +11,11 @@ import {
   getFolderList,
   getGlobalFolderTrail,
   moveItem,
+  moveItems,
   normalizeBookmarkUrl,
   recordBookmarkUsed,
   removeItem,
+  removeItems,
   resetMockBookmarks,
   searchAllBookmarks,
   searchInSubtree,
@@ -24,6 +26,10 @@ import {
   calculateMoveIndexFromVisualIndices,
   calculateReorderIndex,
 } from '../src/ui/dragdrop.js';
+import {
+  computeNormalizedRect,
+  rectsIntersect,
+} from '../src/ui/selection.js';
 
 test('bookmarks service — folder listing & subtree contents', async (t) => {
   t.beforeEach(() => {
@@ -260,6 +266,55 @@ test('bookmarks service — folder listing & subtree contents', async (t) => {
     assert.deepEqual(
       grouped.map((i) => i.id),
       ['f1', 'f2', 'b1', 'b2']
+    );
+  });
+
+  await t.test('batch operations: moveItems, removeItems, and marquee geometry helpers', async () => {
+    // Geometry helpers for marquee selection
+    const rect = computeNormalizedRect(200, 300, 50, 100);
+    assert.deepEqual(rect, {
+      left: 50,
+      top: 100,
+      right: 200,
+      bottom: 300,
+      width: 150,
+      height: 200,
+    });
+    assert.equal(
+      rectsIntersect(rect, { left: 100, top: 150, right: 250, bottom: 250 }),
+      true
+    );
+    assert.equal(
+      rectsIntersect(rect, { left: 210, top: 150, right: 300, bottom: 250 }),
+      false
+    );
+
+    // Multi-item reorder within folder '10' (['100', '101', '102', '103'])
+    // Move ['100', '101'] to the end (index 2 of remaining ['102', '103'])
+    await moveItems(['100', '101'], { parentId: '10', index: 2 });
+    let folder = await getFolderContents('10');
+    assert.deepEqual(
+      folder.items.map((i) => i.id),
+      ['102', '103', '100', '101']
+    );
+
+    // Move ['102', '103'] into subfolder '100' (Engineering)
+    await moveItems(['102', '103'], { parentId: '100' });
+    const eng = await getFolderContents('100');
+    assert.deepEqual(
+      eng.items.map((i) => i.id),
+      ['1001', '1002', '102', '103']
+    );
+
+    // Bulk removeItems
+    await removeItems([
+      { id: '102', isFolder: false },
+      { id: '103', isFolder: false },
+    ]);
+    const engAfterDelete = await getFolderContents('100');
+    assert.deepEqual(
+      engAfterDelete.items.map((i) => i.id),
+      ['1001', '1002']
     );
   });
 });

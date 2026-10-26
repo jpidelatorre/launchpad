@@ -3,7 +3,7 @@
  * and moving items into subfolders or breadcrumbs.
  */
 
-import { moveItem } from '../services/bookmarks.js';
+import { moveItem, moveItems } from '../services/bookmarks.js';
 
 /**
  * Pure helper that calculates the target index for `moveItem` when dropping `draggedId`
@@ -76,7 +76,9 @@ export function calculateMoveIndexFromVisualIndices(
  */
 export function setupDragAndDrop({ gridEl, breadcrumbEl, store, onError }) {
   let draggedId = null;
+  let draggedIds = [];
   let draggedEl = null;
+  let draggedEls = [];
   let pendingFolderDropId = null;
   let dropCommitted = false;
 
@@ -141,9 +143,25 @@ export function setupDragAndDrop({ gridEl, breadcrumbEl, store, onError }) {
     pendingFolderDropId = null;
     dropCommitted = false;
 
+    const selectedSet = new Set(
+      (state.selectedIds || []).map((id) => String(id))
+    );
+    if (selectedSet.has(String(draggedId)) && selectedSet.size > 1) {
+      draggedIds = state.items
+        .filter((item) => selectedSet.has(String(item.id)))
+        .map((item) => String(item.id));
+    } else {
+      draggedIds = [String(draggedId)];
+    }
+
+    const allCards = Array.from(gridEl.querySelectorAll('[data-item-id]'));
+    draggedEls = draggedIds
+      .map((id) => allCards.find((el) => el.dataset.itemId === id))
+      .filter(Boolean);
+
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', draggedId);
+      e.dataTransfer.setData('text/plain', draggedIds.join(','));
     }
 
     // Apply `.dragging` placeholder class on the next frame so the browser
@@ -151,11 +169,11 @@ export function setupDragAndDrop({ gridEl, breadcrumbEl, store, onError }) {
     if (typeof requestAnimationFrame === 'function') {
       requestAnimationFrame(() => {
         if (draggedEl === card) {
-          card.classList.add('dragging');
+          draggedEls.forEach((el) => el.classList.add('dragging'));
         }
       });
     } else {
-      card.classList.add('dragging');
+      draggedEls.forEach((el) => el.classList.add('dragging'));
     }
   });
 
@@ -171,7 +189,7 @@ export function setupDragAndDrop({ gridEl, breadcrumbEl, store, onError }) {
     const target = e.target instanceof Element ? e.target : null;
     const card = target ? target.closest('[data-item-id]') : null;
 
-    if (!card || card === draggedEl) {
+    if (!card || draggedIds.includes(String(card.dataset.itemId))) {
       clearFolderIndicators();
       return;
     }
@@ -186,18 +204,27 @@ export function setupDragAndDrop({ gridEl, breadcrumbEl, store, onError }) {
       return;
     }
 
-    // 2. Otherwise, shift the dragged card live in the DOM before or after `card`
+    // 2. Otherwise, shift the dragged card(s) live in the DOM before or after `card`
     clearFolderIndicators();
     const state = store.getState();
     const isList = state.settings.density === 'list';
     const side = getReorderSide(card, e.clientX, e.clientY, isList);
 
-    if (side === 'before') {
-      if (draggedEl.nextElementSibling !== card) {
-        gridEl.insertBefore(draggedEl, card);
+    if (draggedEls.length <= 1) {
+      if (side === 'before') {
+        if (draggedEl.nextElementSibling !== card) {
+          gridEl.insertBefore(draggedEl, card);
+        }
+      } else if (card.nextElementSibling !== draggedEl) {
+        gridEl.insertBefore(draggedEl, card.nextElementSibling);
       }
-    } else if (card.nextElementSibling !== draggedEl) {
-      gridEl.insertBefore(draggedEl, card.nextElementSibling);
+    } else {
+      const refNode = side === 'before' ? card : card.nextElementSibling;
+      for (const el of draggedEls) {
+        if (el !== refNode) {
+          gridEl.insertBefore(el, refNode);
+        }
+      }
     }
   });
 
@@ -207,17 +234,39 @@ export function setupDragAndDrop({ gridEl, breadcrumbEl, store, onError }) {
 
     dropCommitted = true;
     const sourceId = draggedId;
+    const sourceIds = [...draggedIds];
     const folderTargetId = pendingFolderDropId;
 
     draggedId = null;
+    draggedIds = [];
     draggedEl = null;
+    draggedEls = [];
     clearAllDragClasses();
 
     const state = store.getState();
 
     try {
-      if (folderTargetId && folderTargetId !== sourceId) {
-        await moveItem(sourceId, { parentId: folderTargetId });
+      if (folderTargetId && !sourceIds.includes(String(folderTargetId))) {
+        if (sourceIds.length > 1) {
+          await moveItems(sourceIds, { parentId: folderTargetId });
+          store.clearSelection();
+        } else {
+          await moveItem(sourceId, { parentId: folderTargetId });
+        }
+      } else if (sourceIds.length > 1 && state.currentFolderId) {
+        const domCards = Array.from(gridEl.querySelectorAll('[data-item-id]'));
+        const movingSet = new Set(sourceIds);
+        let insertAt = 0;
+        for (const el of domCards) {
+          if (movingSet.has(String(el.dataset.itemId))) {
+            break;
+          }
+          insertAt++;
+        }
+        await moveItems(sourceIds, {
+          parentId: state.currentFolderId,
+          index: insertAt,
+        });
       } else {
         const domCards = Array.from(gridEl.querySelectorAll('[data-item-id]'));
         const newVisualIndex = domCards.findIndex(
@@ -239,8 +288,10 @@ export function setupDragAndDrop({ gridEl, breadcrumbEl, store, onError }) {
           });
         }
       }
+      gridEl._renderSignature = '';
       await store.refresh();
     } catch (err) {
+      gridEl._renderSignature = '';
       await store.refresh();
       onError?.(err.message || 'Unable to move item.');
     }
@@ -249,12 +300,15 @@ export function setupDragAndDrop({ gridEl, breadcrumbEl, store, onError }) {
   gridEl.addEventListener('dragend', async () => {
     const wasCommitted = dropCommitted;
     draggedId = null;
+    draggedIds = [];
     draggedEl = null;
+    draggedEls = [];
     dropCommitted = false;
     clearAllDragClasses();
 
     if (!wasCommitted) {
       // Restore original DOM order if drag was cancelled (e.g. Escape)
+      gridEl._renderSignature = '';
       await store.refresh();
     }
   });
@@ -271,7 +325,7 @@ export function setupDragAndDrop({ gridEl, breadcrumbEl, store, onError }) {
     if (
       !targetFolderId ||
       targetFolderId === state.currentFolderId ||
-      targetFolderId === draggedId
+      draggedIds.includes(String(targetFolderId))
     ) {
       return;
     }
@@ -298,8 +352,11 @@ export function setupDragAndDrop({ gridEl, breadcrumbEl, store, onError }) {
 
     dropCommitted = true;
     const sourceId = draggedId;
+    const sourceIds = [...draggedIds];
     draggedId = null;
+    draggedIds = [];
     draggedEl = null;
+    draggedEls = [];
     clearAllDragClasses();
 
     if (!crumb) return;
@@ -308,14 +365,20 @@ export function setupDragAndDrop({ gridEl, breadcrumbEl, store, onError }) {
     if (
       !targetFolderId ||
       targetFolderId === state.currentFolderId ||
-      targetFolderId === sourceId
+      sourceIds.includes(String(targetFolderId))
     ) {
       return;
     }
 
     e.preventDefault();
     try {
-      await moveItem(sourceId, { parentId: targetFolderId });
+      if (sourceIds.length > 1) {
+        await moveItems(sourceIds, { parentId: targetFolderId });
+        store.clearSelection();
+      } else {
+        await moveItem(sourceId, { parentId: targetFolderId });
+      }
+      gridEl._renderSignature = '';
       await store.refresh();
     } catch (err) {
       onError?.(err.message || 'Unable to move item to folder.');

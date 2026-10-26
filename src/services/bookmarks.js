@@ -668,6 +668,20 @@ export async function removeItem(id, isFolder = false) {
 }
 
 /**
+ * Deletes multiple bookmarks and/or folders sequentially.
+ * @param {Array<{ id: string, isFolder?: boolean }>} items
+ * @returns {Promise<void>}
+ */
+export async function removeItems(items) {
+  if (!Array.isArray(items) || items.length === 0) return;
+  for (const item of items) {
+    if (item && item.id) {
+      await removeItem(item.id, Boolean(item.isFolder));
+    }
+  }
+}
+
+/**
  * Moves a bookmark or folder to a new parent folder and/or index.
  * Guards against moving a folder into itself or one of its own descendants.
  * @param {string} id
@@ -729,6 +743,79 @@ export async function moveItem(id, { parentId, index }) {
   reindexChildren(newParent);
   notifyMockChange();
   return structuredClone(node);
+}
+
+/**
+ * Moves multiple bookmarks/folders into `parentId` (optionally inserting them as a
+ * contiguous block at `index` among the remaining items).
+ * Validates all items before moving any of them.
+ *
+ * @param {Array<string>} ids
+ * @param {{ parentId: string, index?: number }} destination
+ * @returns {Promise<void>}
+ */
+export async function moveItems(ids, { parentId, index }) {
+  if (!Array.isArray(ids) || ids.length === 0) return;
+  const uniqueIds = Array.from(new Set(ids.map((id) => String(id))));
+  const targetParentId = String(parentId);
+
+  // Pre-validate that none of the moved items is the destination folder or an ancestor of it
+  for (const id of uniqueIds) {
+    if (id === targetParentId) {
+      throw new Error('Cannot move a folder into itself.');
+    }
+    const draggedSubtree = await getSubTree(id);
+    if (draggedSubtree) {
+      const descendantCheck = await getBreadcrumbPath(id, targetParentId);
+      if (descendantCheck) {
+        throw new Error('Cannot move a folder into its own subfolder.');
+      }
+    }
+  }
+
+  if (typeof index !== 'number') {
+    for (const id of uniqueIds) {
+      await moveItem(id, { parentId: targetParentId });
+    }
+    return;
+  }
+
+  const contents = await getFolderContents(targetParentId);
+  if (!contents) {
+    throw new Error(`Invalid destination folder ${targetParentId}.`);
+  }
+
+  const movingSet = new Set(uniqueIds);
+  const currentIds = contents.items.map((item) => String(item.id));
+  const remainingIds = currentIds.filter((id) => !movingSet.has(id));
+  const insertAt = Math.max(0, Math.min(index, remainingIds.length));
+
+  const desiredOrder = [
+    ...remainingIds.slice(0, insertAt),
+    ...uniqueIds,
+    ...remainingIds.slice(insertAt),
+  ];
+
+  // First ensure any item coming from a different folder is moved into targetParentId
+  for (const id of uniqueIds) {
+    if (!currentIds.includes(id)) {
+      await moveItem(id, { parentId: targetParentId });
+      currentIds.push(id);
+    }
+  }
+
+  for (let targetIdx = 0; targetIdx < desiredOrder.length; targetIdx++) {
+    const desiredId = desiredOrder[targetIdx];
+    const currentIdx = currentIds.indexOf(desiredId);
+    if (currentIdx !== -1 && currentIdx !== targetIdx) {
+      await moveItem(desiredId, {
+        parentId: targetParentId,
+        index: targetIdx,
+      });
+      currentIds.splice(currentIdx, 1);
+      currentIds.splice(targetIdx, 0, desiredId);
+    }
+  }
 }
 
 /**

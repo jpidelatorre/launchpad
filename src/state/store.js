@@ -27,6 +27,8 @@ export function createLaunchpadStore() {
     items: [],
     searchQuery: '',
     focusedIndex: -1,
+    selectedIds: [],
+    selectionAnchorIndex: -1,
   };
 
   const subscribers = new Set();
@@ -63,6 +65,8 @@ export function createLaunchpadStore() {
         breadcrumbs: [],
         items: [],
         focusedIndex: -1,
+        selectedIds: [],
+        selectionAnchorIndex: -1,
       });
       return state;
     }
@@ -78,6 +82,8 @@ export function createLaunchpadStore() {
         breadcrumbs: [],
         items: [],
         focusedIndex: -1,
+        selectedIds: [],
+        selectionAnchorIndex: -1,
       });
       return state;
     }
@@ -119,6 +125,15 @@ export function createLaunchpadStore() {
           ? items.length - 1
           : state.focusedIndex;
 
+    const validItemIds = new Set(items.map((item) => String(item.id)));
+    const prunedSelectedIds = (state.selectedIds || []).filter((id) =>
+      validItemIds.has(String(id))
+    );
+    const clampedAnchor =
+      items.length === 0 || state.selectionAnchorIndex >= items.length
+        ? -1
+        : state.selectionAnchorIndex;
+
     setState({
       folders,
       rootFolderValid: true,
@@ -127,6 +142,8 @@ export function createLaunchpadStore() {
       breadcrumbs: breadcrumbs || [],
       items,
       focusedIndex: clampedFocus,
+      selectedIds: prunedSelectedIds,
+      selectionAnchorIndex: clampedAnchor,
     });
 
     return state;
@@ -164,6 +181,8 @@ export function createLaunchpadStore() {
             currentFolderId: saved.rootFolderId,
             searchQuery: '',
             focusedIndex: -1,
+            selectedIds: [],
+            selectionAnchorIndex: -1,
           }
         : {}),
     };
@@ -200,6 +219,8 @@ export function createLaunchpadStore() {
       currentFolderId: String(folderId),
       searchQuery: '',
       focusedIndex: -1,
+      selectedIds: [],
+      selectionAnchorIndex: -1,
     };
     return refresh();
   }
@@ -227,6 +248,8 @@ export function createLaunchpadStore() {
       ...state,
       searchQuery: cleanQuery,
       focusedIndex: cleanQuery.trim() ? 0 : -1,
+      selectedIds: [],
+      selectionAnchorIndex: -1,
     };
     return refresh();
   }
@@ -237,29 +260,191 @@ export function createLaunchpadStore() {
    */
   function setFocusedIndex(index) {
     if (state.items.length === 0) {
-      setState({ focusedIndex: -1 });
+      setState({ focusedIndex: -1, selectionAnchorIndex: -1 });
       return;
     }
     const clamped = Math.max(-1, Math.min(index, state.items.length - 1));
-    setState({ focusedIndex: clamped });
+    setState({
+      focusedIndex: clamped,
+      selectionAnchorIndex: clamped,
+    });
   }
 
   /**
    * Moves keyboard focus across the grid by `delta` steps.
+   * When `extendSelection` is true (e.g. Shift + Arrow), extends selection from the anchor index.
    * @param {number} delta
+   * @param {{ extendSelection?: boolean }} [options]
    */
-  function moveFocus(delta) {
+  function moveFocus(delta, { extendSelection = false } = {}) {
     const count = state.items.length;
     if (count === 0) return;
 
+    if (extendSelection) {
+      const anchor =
+        state.selectionAnchorIndex >= 0 && state.selectionAnchorIndex < count
+          ? state.selectionAnchorIndex
+          : state.focusedIndex >= 0 && state.focusedIndex < count
+            ? state.focusedIndex
+            : delta >= 0
+              ? 0
+              : count - 1;
+
+      const nextFocus =
+        state.focusedIndex === -1
+          ? anchor
+          : Math.max(0, Math.min(count - 1, state.focusedIndex + delta));
+
+      const start = Math.min(anchor, nextFocus);
+      const end = Math.max(anchor, nextFocus);
+      const rangeIds = state.items
+        .slice(start, end + 1)
+        .map((item) => String(item.id));
+
+      setState({
+        focusedIndex: nextFocus,
+        selectionAnchorIndex: anchor,
+        selectedIds: rangeIds,
+      });
+      return;
+    }
+
     if (state.focusedIndex === -1) {
       const initial = delta >= 0 ? 0 : count - 1;
-      setState({ focusedIndex: initial });
+      setState({
+        focusedIndex: initial,
+        selectionAnchorIndex: initial,
+        selectedIds: [],
+      });
       return;
     }
 
     const next = Math.max(0, Math.min(count - 1, state.focusedIndex + delta));
-    setState({ focusedIndex: next });
+    setState({
+      focusedIndex: next,
+      selectionAnchorIndex: next,
+      selectedIds: [],
+    });
+  }
+
+  /**
+   * Sets the selected item IDs directly (used by marquee drag selection).
+   * @param {Array<string>} ids
+   * @param {number} [anchorIndex]
+   */
+  function setSelection(ids, anchorIndex) {
+    const validIds = new Set(state.items.map((item) => String(item.id)));
+    const seen = new Set();
+    const nextSelected = [];
+
+    for (const rawId of ids || []) {
+      const id = String(rawId);
+      if (validIds.has(id) && !seen.has(id)) {
+        seen.add(id);
+        nextSelected.push(id);
+      }
+    }
+
+    const patch = { selectedIds: nextSelected };
+    if (typeof anchorIndex === 'number') {
+      patch.selectionAnchorIndex = anchorIndex;
+      patch.focusedIndex = anchorIndex;
+    } else if (nextSelected.length > 0 && state.selectionAnchorIndex === -1) {
+      const firstIdx = state.items.findIndex(
+        (item) => String(item.id) === nextSelected[0]
+      );
+      if (firstIdx !== -1) {
+        patch.selectionAnchorIndex = firstIdx;
+      }
+    }
+
+    setState(patch);
+  }
+
+  /**
+   * Toggles selection state of a single item and updates the anchor/focus index.
+   * @param {string} id
+   * @param {number} [index]
+   */
+  function toggleSelectItem(id, index) {
+    const targetId = String(id);
+    const itemIdx =
+      typeof index === 'number'
+        ? index
+        : state.items.findIndex((item) => String(item.id) === targetId);
+    if (itemIdx < 0 || itemIdx >= state.items.length) return;
+
+    const exists = state.selectedIds.includes(targetId);
+    const nextSelected = exists
+      ? state.selectedIds.filter((item) => item !== targetId)
+      : [...state.selectedIds, targetId];
+
+    setState({
+      selectedIds: nextSelected,
+      focusedIndex: itemIdx,
+      selectionAnchorIndex: itemIdx,
+    });
+  }
+
+  /**
+   * Selects a contiguous range of items from the current anchor (or focused item)
+   * to `targetIndex` inclusive (used by Shift + Click).
+   * @param {number} targetIndex
+   * @param {{ additive?: boolean }} [options]
+   */
+  function selectRange(targetIndex, { additive = false } = {}) {
+    const count = state.items.length;
+    if (count === 0) return;
+
+    const clampedTarget = Math.max(0, Math.min(count - 1, targetIndex));
+    const anchor =
+      state.selectionAnchorIndex >= 0 && state.selectionAnchorIndex < count
+        ? state.selectionAnchorIndex
+        : state.focusedIndex >= 0 && state.focusedIndex < count
+          ? state.focusedIndex
+          : clampedTarget;
+
+    const start = Math.min(anchor, clampedTarget);
+    const end = Math.max(anchor, clampedTarget);
+    const rangeIds = state.items
+      .slice(start, end + 1)
+      .map((item) => String(item.id));
+
+    const nextSelected = additive
+      ? Array.from(new Set([...state.selectedIds, ...rangeIds]))
+      : rangeIds;
+
+    setState({
+      selectedIds: nextSelected,
+      selectionAnchorIndex: anchor,
+      focusedIndex: clampedTarget,
+    });
+  }
+
+  /**
+   * Selects all items in the current view.
+   */
+  function selectAll() {
+    if (state.items.length === 0) return;
+    setState({
+      selectedIds: state.items.map((item) => String(item.id)),
+      selectionAnchorIndex:
+        state.selectionAnchorIndex >= 0 ? state.selectionAnchorIndex : 0,
+      focusedIndex: state.focusedIndex >= 0 ? state.focusedIndex : 0,
+    });
+  }
+
+  /**
+   * Clears all selected items.
+   */
+  function clearSelection() {
+    if (state.selectedIds.length === 0 && state.selectionAnchorIndex === -1) {
+      return;
+    }
+    setState({
+      selectedIds: [],
+      selectionAnchorIndex: -1,
+    });
   }
 
   return {
@@ -274,5 +459,10 @@ export function createLaunchpadStore() {
     setSearchQuery,
     setFocusedIndex,
     moveFocus,
+    setSelection,
+    toggleSelectItem,
+    selectRange,
+    selectAll,
+    clearSelection,
   };
 }

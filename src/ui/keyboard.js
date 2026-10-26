@@ -43,9 +43,11 @@ export function detectGridColumnCount(gridEl) {
  *   searchInput: HTMLInputElement,
  *   gridEl: HTMLElement,
  *   onActivateItem: (item: object, forceNewTab: boolean) => void,
+ *   onActivateSelected?: (items: Array<object>) => void,
  *   onRequestCreate: (isFolder: boolean) => void,
  *   onRequestEdit: (item: object) => void,
  *   onRequestDelete: (item: object) => void,
+ *   onRequestDeleteSelected?: (items: Array<object>) => void,
  *   onRequestSettings: () => void,
  *   isModalOpen: () => boolean
  * }} options
@@ -55,9 +57,11 @@ export function setupKeyboardNavigation({
   searchInput,
   gridEl,
   onActivateItem,
+  onActivateSelected,
   onRequestCreate,
   onRequestEdit,
   onRequestDelete,
+  onRequestDeleteSelected,
   onRequestSettings,
   isModalOpen,
 }) {
@@ -94,6 +98,11 @@ export function setupKeyboardNavigation({
     // Handle Escape inside or outside search input
     if (e.key === 'Escape') {
       const state = store.getState();
+      if (state.selectedIds && state.selectedIds.length > 0) {
+        e.preventDefault();
+        store.clearSelection();
+        return;
+      }
       if (state.searchQuery) {
         e.preventDefault();
         searchInput.value = '';
@@ -143,31 +152,45 @@ export function setupKeyboardNavigation({
       return;
     }
 
+    // Cmd/Ctrl + A selects all items in current folder
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      store.selectAll();
+      return;
+    }
+
     const cols = detectGridColumnCount(gridEl);
 
     switch (e.key) {
       case 'ArrowRight': {
         e.preventDefault();
-        store.moveFocus(1);
+        store.moveFocus(1, { extendSelection: e.shiftKey });
         break;
       }
       case 'ArrowLeft': {
         e.preventDefault();
-        store.moveFocus(-1);
+        store.moveFocus(-1, { extendSelection: e.shiftKey });
         break;
       }
       case 'ArrowDown': {
         e.preventDefault();
-        store.moveFocus(cols);
+        store.moveFocus(cols, { extendSelection: e.shiftKey });
         break;
       }
       case 'ArrowUp': {
         e.preventDefault();
-        store.moveFocus(-cols);
+        store.moveFocus(-cols, { extendSelection: e.shiftKey });
         break;
       }
       case 'Enter': {
-        if (state.focusedIndex >= 0 && state.items[state.focusedIndex]) {
+        if (state.selectedIds && state.selectedIds.length > 1) {
+          e.preventDefault();
+          const selectedSet = new Set(state.selectedIds.map((id) => String(id)));
+          const selectedItems = state.items.filter((item) =>
+            selectedSet.has(String(item.id))
+          );
+          onActivateSelected?.(selectedItems);
+        } else if (state.focusedIndex >= 0 && state.items[state.focusedIndex]) {
           e.preventDefault();
           onActivateItem(
             state.items[state.focusedIndex],
@@ -211,7 +234,14 @@ export function setupKeyboardNavigation({
         break;
       }
       case 'Delete': {
-        if (state.focusedIndex >= 0 && state.items[state.focusedIndex]) {
+        if (state.selectedIds && state.selectedIds.length > 1) {
+          e.preventDefault();
+          const selectedSet = new Set(state.selectedIds.map((id) => String(id)));
+          const selectedItems = state.items.filter((item) =>
+            selectedSet.has(String(item.id))
+          );
+          onRequestDeleteSelected?.(selectedItems);
+        } else if (state.focusedIndex >= 0 && state.items[state.focusedIndex]) {
           e.preventDefault();
           onRequestDelete(state.items[state.focusedIndex]);
         }

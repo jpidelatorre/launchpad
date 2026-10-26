@@ -7,6 +7,7 @@ import {
   onBookmarksChanged,
   recordBookmarkUsed,
   removeItem,
+  removeItems,
   sortFolderContents,
   updateItem,
 } from './services/bookmarks.js';
@@ -20,6 +21,7 @@ import {
   renderFolderOptions,
   renderLaunchpadMain,
 } from './ui/renderer.js';
+import { setupMarqueeSelection } from './ui/selection.js';
 
 const ACCENT_PRESETS = [
   { name: 'Indigo', hex: '#6366f1' },
@@ -55,11 +57,20 @@ export async function bootstrapLaunchpad() {
   const onboardingSelectEl = document.getElementById('onboarding-folder-select');
   const onboardingSaveBtn = document.getElementById('onboarding-save-btn');
 
+  const workspaceEl = document.querySelector('.main-content');
   const gridEl = document.getElementById('launchpad-grid');
+  const marqueeEl = document.getElementById('selection-marquee');
   const emptyStateEl = document.getElementById('empty-state');
   const emptyStateTitleEl = document.getElementById('empty-state-title');
   const emptyStateDescEl = document.getElementById('empty-state-desc');
   const emptyAddBookmarkBtn = document.getElementById('empty-add-bookmark-btn');
+
+  // Selection Toolbar Controls
+  const selectionBarEl = document.getElementById('selection-bar');
+  const selectionCountLabel = document.getElementById('selection-count-label');
+  const selectionOpenBtn = document.getElementById('selection-open-btn');
+  const selectionDeleteBtn = document.getElementById('selection-delete-btn');
+  const selectionClearBtn = document.getElementById('selection-clear-btn');
 
   // Item Editor Modal
   const itemDialog = document.getElementById('item-dialog');
@@ -98,6 +109,7 @@ export async function bootstrapLaunchpad() {
 
   let editingContext = null; // { mode: 'create' | 'edit', isFolder: boolean, item?: object }
   let pendingDeleteItem = null;
+  let pendingDeleteItems = null;
   let toastTimeout = null;
 
   function showToast(message, isError = false) {
@@ -173,6 +185,7 @@ export async function bootstrapLaunchpad() {
   function openDeleteModal(item) {
     if (!item) return;
     pendingDeleteItem = item;
+    pendingDeleteItems = null;
     if (item.isFolder) {
       deleteDialogMessage.textContent = `Are you sure you want to delete the folder "${item.title}" and all ${item.childCount} item(s) inside it?`;
     } else {
@@ -180,6 +193,41 @@ export async function bootstrapLaunchpad() {
     }
     deleteDialog.showModal();
     deleteConfirmBtn.focus();
+  }
+
+  function openDeleteSelectedModal(items) {
+    if (!Array.isArray(items) || items.length === 0) return;
+    if (items.length === 1) {
+      openDeleteModal(items[0]);
+      return;
+    }
+    pendingDeleteItem = null;
+    pendingDeleteItems = items;
+    const folderCount = items.filter((i) => i.isFolder).length;
+    if (folderCount > 0) {
+      deleteDialogMessage.textContent = `Are you sure you want to delete ${items.length} selected items (including ${folderCount} folder(s) and their contents)?`;
+    } else {
+      deleteDialogMessage.textContent = `Are you sure you want to delete ${items.length} selected bookmarks?`;
+    }
+    deleteDialog.showModal();
+    deleteConfirmBtn.focus();
+  }
+
+  function handleActivateSelected(items) {
+    if (!Array.isArray(items) || items.length === 0) return;
+    if (items.length === 1) {
+      handleActivateItem(items[0], false);
+      return;
+    }
+    const bookmarks = items.filter((item) => !item.isFolder && item.url);
+    if (bookmarks.length === 0) {
+      showToast('Select at least one bookmark to open in new tabs.');
+      return;
+    }
+    for (const bm of bookmarks) {
+      recordBookmarkUsed(bm.id);
+      window.open(bm.url, '_blank', 'noopener,noreferrer');
+    }
   }
 
   function syncSettingsModalControls(state) {
@@ -269,8 +317,20 @@ export async function bootstrapLaunchpad() {
       onActivateItem: handleActivateItem,
       onEditItem: openEditModal,
       onDeleteItem: openDeleteModal,
-      onFocusItem: (idx) => store.setFocusedIndex(idx),
+      onFocusItem: (idx) => {
+        store.clearSelection();
+        store.setFocusedIndex(idx);
+      },
+      onShiftSelect: (idx) => store.selectRange(idx),
     });
+
+    if (selectionBarEl) {
+      const selCount = state.selectedIds ? state.selectedIds.length : 0;
+      selectionBarEl.hidden = selCount === 0;
+      if (selectionCountLabel) {
+        selectionCountLabel.textContent = `${selCount} selected`;
+      }
+    }
 
     if (settingsDialog.open) {
       syncSettingsModalControls(state);
@@ -437,9 +497,27 @@ export async function bootstrapLaunchpad() {
   deleteCancelBtn.addEventListener('click', () => {
     deleteDialog.close();
     pendingDeleteItem = null;
+    pendingDeleteItems = null;
   });
 
   deleteConfirmBtn.addEventListener('click', async () => {
+    if (pendingDeleteItems && pendingDeleteItems.length > 0) {
+      const count = pendingDeleteItems.length;
+      try {
+        await removeItems(pendingDeleteItems);
+        deleteDialog.close();
+        pendingDeleteItems = null;
+        store.clearSelection();
+        showToast(`Deleted ${count} items.`);
+        await store.refresh();
+      } catch (err) {
+        deleteDialog.close();
+        pendingDeleteItems = null;
+        showToast(err.message || 'Failed to delete selected items.', true);
+      }
+      return;
+    }
+
     if (!pendingDeleteItem) return;
     try {
       await removeItem(pendingDeleteItem.id, Boolean(pendingDeleteItem.isFolder));
@@ -451,6 +529,25 @@ export async function bootstrapLaunchpad() {
       deleteDialog.close();
       showToast(err.message || 'Failed to delete item.', true);
     }
+  });
+
+  // Selection Bar Button Events
+  function getSelectedItemsFromState() {
+    const state = store.getState();
+    const selectedSet = new Set((state.selectedIds || []).map((id) => String(id)));
+    return state.items.filter((item) => selectedSet.has(String(item.id)));
+  }
+
+  selectionOpenBtn?.addEventListener('click', () => {
+    handleActivateSelected(getSelectedItemsFromState());
+  });
+
+  selectionDeleteBtn?.addEventListener('click', () => {
+    openDeleteSelectedModal(getSelectedItemsFromState());
+  });
+
+  selectionClearBtn?.addEventListener('click', () => {
+    store.clearSelection();
   });
 
   // Settings Modal Controls
@@ -499,7 +596,15 @@ export async function bootstrapLaunchpad() {
     });
   });
 
-  // Setup Drag & Drop and Keyboard Shortcuts
+  // Setup Marquee Selection, Drag & Drop, and Keyboard Shortcuts
+  setupMarqueeSelection({
+    workspaceEl,
+    gridEl,
+    marqueeEl,
+    store,
+    isModalOpen: isAnyModalOpen,
+  });
+
   setupDragAndDrop({
     gridEl,
     breadcrumbEl,
@@ -512,9 +617,11 @@ export async function bootstrapLaunchpad() {
     searchInput,
     gridEl,
     onActivateItem: handleActivateItem,
+    onActivateSelected: handleActivateSelected,
     onRequestCreate: openCreateModal,
     onRequestEdit: openEditModal,
     onRequestDelete: openDeleteModal,
+    onRequestDeleteSelected: openDeleteSelectedModal,
     onRequestSettings: openSettingsModal,
     isModalOpen: isAnyModalOpen,
   });

@@ -134,7 +134,8 @@ export function renderBreadcrumbs(container, state, onSelectCrumb) {
  *   onActivateItem: (item: object, forceNewTab: boolean) => void,
  *   onEditItem: (item: object) => void,
  *   onDeleteItem: (item: object) => void,
- *   onFocusItem: (index: number) => void
+ *   onFocusItem: (index: number) => void,
+ *   onShiftSelect?: (index: number) => void
  * }} params
  */
 export function renderLaunchpadMain({
@@ -150,6 +151,7 @@ export function renderLaunchpadMain({
   onEditItem,
   onDeleteItem,
   onFocusItem,
+  onShiftSelect,
 }) {
   // 1. Handle unconfigured or missing root folder
   if (!state.rootFolderValid) {
@@ -157,6 +159,7 @@ export function renderLaunchpadMain({
     gridEl.hidden = true;
     emptyStateEl.hidden = true;
     toolbarActionsEl.hidden = true;
+    gridEl._renderSignature = '';
     renderFolderOptions(
       onboardingSelectEl,
       state.folders,
@@ -172,6 +175,7 @@ export function renderLaunchpadMain({
   if (state.items.length === 0) {
     gridEl.hidden = true;
     emptyStateEl.hidden = false;
+    gridEl._renderSignature = '';
 
     if (state.searchQuery.trim()) {
       emptyStateTitleEl.textContent = 'No matching bookmarks found';
@@ -186,26 +190,76 @@ export function renderLaunchpadMain({
 
   emptyStateEl.hidden = true;
   gridEl.hidden = false;
-  gridEl.innerHTML = '';
 
+  const selectedSet = new Set((state.selectedIds || []).map((id) => String(id)));
   const isSearching = Boolean(state.searchQuery.trim());
 
+  const nextSignature = JSON.stringify({
+    folder: state.currentFolderId,
+    q: state.searchQuery,
+    density: state.settings?.density,
+    iconSize: state.settings?.iconSize,
+    items: state.items.map(
+      (i) =>
+        `${i.id}:${i.title}:${i.url || ''}:${i.childCount}:${i.relativePath || ''}`
+    ),
+  });
+
+  // Fast path: if only selection or focus changed, update existing card elements in-place
+  if (
+    gridEl._renderSignature === nextSignature &&
+    gridEl.children.length === state.items.length
+  ) {
+    Array.from(gridEl.children).forEach((card, idx) => {
+      const itemId = String(card.dataset.itemId || '');
+      const isSelected = selectedSet.has(itemId);
+      const isFocused = idx === state.focusedIndex;
+      card.dataset.index = String(idx);
+      card.dataset.focused = String(isFocused);
+      card.dataset.selected = String(isSelected);
+      card.classList.toggle('is-selected', isSelected);
+      card.setAttribute('aria-selected', String(isSelected));
+    });
+
+    if (state.focusedIndex >= 0) {
+      const focusedCard = gridEl.querySelector(
+        `[data-index="${state.focusedIndex}"]`
+      );
+      if (focusedCard && typeof focusedCard.scrollIntoView === 'function') {
+        focusedCard.scrollIntoView({ block: 'nearest' });
+      }
+    }
+    return;
+  }
+
+  gridEl._renderSignature = nextSignature;
+  gridEl.innerHTML = '';
+
   state.items.forEach((item, idx) => {
+    const isSelected = selectedSet.has(String(item.id));
     const card = document.createElement('article');
-    card.className = `launchpad-card ${item.isFolder ? 'is-folder' : 'is-bookmark'}`;
+    card.className = `launchpad-card ${item.isFolder ? 'is-folder' : 'is-bookmark'}${isSelected ? ' is-selected' : ''}`;
     card.dataset.itemId = item.id;
     card.dataset.isFolder = String(Boolean(item.isFolder));
     card.dataset.index = String(idx);
     card.dataset.focused = String(idx === state.focusedIndex);
+    card.dataset.selected = String(isSelected);
     card.draggable = !isSearching;
     card.tabIndex = 0;
     card.setAttribute('role', 'button');
+    card.setAttribute('aria-selected', String(isSelected));
     card.setAttribute(
       'aria-label',
       item.isFolder
         ? `Folder ${item.title}, ${item.childCount} items`
         : `Bookmark ${item.title}, ${item.url}`
     );
+
+    // Selection checkmark badge
+    const selectBadge = document.createElement('div');
+    selectBadge.className = 'card-select-badge';
+    selectBadge.setAttribute('aria-hidden', 'true');
+    selectBadge.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 
     // Icon wrapper
     const iconWrap = document.createElement('div');
@@ -293,11 +347,17 @@ export function renderLaunchpadMain({
     actionsWrap.appendChild(editBtn);
     actionsWrap.appendChild(deleteBtn);
 
+    card.appendChild(selectBadge);
     card.appendChild(iconWrap);
     card.appendChild(bodyWrap);
     card.appendChild(actionsWrap);
 
     card.addEventListener('click', (e) => {
+      if (e.shiftKey) {
+        e.preventDefault();
+        onShiftSelect?.(idx, item);
+        return;
+      }
       onFocusItem(idx);
       onActivateItem(item, e.metaKey || e.ctrlKey || e.button === 1);
     });

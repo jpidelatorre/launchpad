@@ -54,6 +54,9 @@
             + Add Bookmark
           </button>
         </section>
+
+        <!-- Marquee Selection Rectangle -->
+        <div id="selection-marquee" class="selection-marquee" aria-hidden="true" hidden></div>
       </main>
 
       <!-- Bottom Toolbar -->
@@ -100,6 +103,35 @@
         </div>
 
         <div class="topbar-right">
+          <div id="selection-bar" class="selection-bar" hidden>
+            <span id="selection-count-label" class="selection-count-label">0 selected</span>
+            <button
+              id="selection-open-btn"
+              type="button"
+              class="btn btn-secondary btn-sm"
+              title="Open selected bookmarks in new tabs (Enter)"
+            >
+              Open
+            </button>
+            <button
+              id="selection-delete-btn"
+              type="button"
+              class="btn btn-danger btn-sm"
+              title="Delete selected items (Delete)"
+            >
+              Delete
+            </button>
+            <button
+              id="selection-clear-btn"
+              type="button"
+              class="selection-clear-btn"
+              title="Clear selection (Esc)"
+              aria-label="Clear selection"
+            >
+              ✕
+            </button>
+          </div>
+
           <div id="toolbar-actions" class="toolbar-actions">
             <button
               id="add-bookmark-btn"
@@ -387,7 +419,9 @@
             <ul class="shortcuts-list">
               <li><span>Focus search bar</span><kbd>/</kbd> or <kbd>⌘/Ctrl + K</kbd></li>
               <li><span>Navigate grid tiles</span><kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd></li>
-              <li><span>Open focused item</span><kbd>Enter</kbd></li>
+              <li><span>Multi-select range</span><kbd>Shift + Click</kbd> or <kbd>Shift + Arrow</kbd></li>
+              <li><span>Select all items</span><kbd>⌘/Ctrl + A</kbd></li>
+              <li><span>Open focused / selected</span><kbd>Enter</kbd></li>
               <li><span>Open in new tab</span><kbd>⌘/Ctrl + Enter</kbd></li>
               <li><span>Go up one folder</span><kbd>Backspace</kbd></li>
               <li><span>New bookmark</span><kbd>N</kbd></li>
